@@ -1,0 +1,94 @@
+/*
+============================================================
+==                🎨 CUSTOMIZE SETTINGS HERE 🎨             ==
+============================================================
+*/
+:root {
+    /* --- COLORS --- */
+    /* Main text and border color */
+    --primary-color: #00ff9d; 
+    
+    /* Color for the glowing effect around the main text and border */
+    --primary-glow-color: rgba(0, 255, 157, 0.7);
+
+    /* Color for the bullet points between messages */
+    --accent-color: #ff00dd;
+
+    /* Color for the glowing effect on the bullet points */
+    --accent-glow-color: rgba(255, 0, 221, 0.9);
+
+    /* Background gradient colors */
+    --bg-gradient-start: rgba(0, 0, 0, 0.9);
+    --bg-gradient-middle: rgba(27, 19, 94, 0.9);
+    --bg-gradient-end: rgba(0, 0, 0, 0.9);
+
+    /* --- SIZING (in pixels) --- */
+    /* The total height of the ticker bar */
+    --ticker-height: 120px;
+
+    /* The font size of the main scrolling text */
+    --font-size: 42px;
+
+    /* The thickness of the top and bottom borders */
+    --border-thickness: 4px;
+}
+/*==========================================================*/
+
+
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap");
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background: transparent;
+    font-family: "Orbitron", sans-serif;
+}
+
+#ticker {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: 30px 0;
+    color: var(--primary-color);
+    background: linear-gradient(
+        90deg,
+        var(--bg-gradient-start) 0%,
+        var(--bg-gradient-middle) 50%,
+        var(--bg-gradient-end) 100%
+    );
+    box-shadow: 0 0 30px var(--primary-glow-color);
+    text-shadow: 0 0 15px var(--primary-glow-color);
+
+    /* Using variables for sizing */
+    height: var(--ticker-height);
+    font-size: var(--font-size);
+    border-top: var(--border-thickness) solid var(--primary-color);
+    border-bottom: var(--border-thickness) solid var(--primary-color);
+    
+    /* Auto-calculates vertical centering for text */
+    line-height: calc(var(--ticker-height) - 60px - (2 * var(--border-thickness)));
+}
+
+.scrolling-text {
+    display: inline-block;
+    padding-left: 100%;
+    animation-name: scroll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    will-change: transform;
+}
+
+.bullet-point {
+    margin: 0 1em;
+    font-size: 48px; /* Kept slightly larger for style */
+    color: var(--accent-color);
+    text-shadow: 0 0 15px var(--accent-glow-color);
+}
+
+@keyframes scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
