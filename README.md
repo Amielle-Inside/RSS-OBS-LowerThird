@@ -1,17 +1,15 @@
 # OBS Live News & Text Ticker
 
-A simple, modern, and highly customizable scrolling text ticker for use as a Browser Source in OBS Studio. Display your own custom messages or pull live headlines from any RSS news feed to keep your stream engaging. This project requires no external plugins or software—just OBS and the files in this folder.
-
-
+A simple, modern, and highly customizable scrolling text ticker for use as a Browser Source in OBS Studio. Display your own custom messages or pull live headlines from any RSS news feed to keep your stream engaging.
 
 ---
 
 ## Features ✨
 
-* **Two Content Modes:** Choose between displaying your own list of custom messages or pulling live headlines from any RSS feed.
-* **Highly Customizable:** Easily change colors, sizing, glow effects, scroll speed, and content without needing to understand the code.
-* **Modern "Gamer" Aesthetic:** A clean design featuring the futuristic "Orbitron" font, glowing borders, and smooth scrolling animations that fit well with most stream layouts.
-* **Lightweight & Simple:** No plugins required. Everything is self-contained in three files (`.html`, `.css`, `.js`) that run directly in OBS.
+* **Two Modes:** Choose between displaying your own list of custom messages or pulling headlines from a live RSS feed.
+* **Easy Customization:** No coding knowledge needed! All colors, speeds, and text options are in clearly marked sections at the top of the files.
+* **Modern "Gamer" Aesthetic:** Clean design with a futuristic font, borders, and neon glow effects that fit well with most stream layouts.
+* **Lightweight & Simple:** No plugins or external software required. Just a single folder and OBS Studio.
 
 ---
 
@@ -21,7 +19,7 @@ Follow these steps to get the ticker running in OBS in under two minutes.
 
 #### Step 1: Download the Files
 
-Download this project's folder, which contains the following three files:
+First, download the project folder which contains the following three files:
 * `index.html`
 * `style.css`
 * `script.js`
@@ -34,90 +32,118 @@ Make sure you keep all three files together in the same folder on your computer.
 
 1.  In OBS, go to the "Sources" dock and click the **`+`** button.
 2.  Select **Browser** from the list.
-3.  Give your new source a name (e.g., "Live Ticker") and click **OK**.
+3.  Give your new source a name, like "Live Ticker," and click **OK**.
 
 ---
 
 #### Step 3: Configure the Browser Source
 
-The properties window will open. Configure it with the following settings:
+A properties window will open. Configure it with the following settings:
 
 1.  Check the box for **Local file**.
 2.  Click the **Browse** button and navigate to the folder you downloaded. Select the `index.html` file.
-3.  Set the **Width** to match your stream's canvas width (e.g., `1920`).
-4.  Set the **Height** to control the size of the ticker (e.g., `120`).
+3.  Set the **Width** to match your canvas width (e.g., `1920`).
+4.  Set the **Height** to control the size of the ticker (a good starting point is `150`).
 5.  Click **OK**.
 
-
-
-You should now see the ticker appear in your OBS scene!
+You should now see the ticker at the bottom of your OBS scene!
 
 ---
 
 ## Customization 🎨
 
-This ticker was designed to be easy for anyone to modify. You only need to edit the `style.css` and `script.js` files with a basic text editor (like Notepad, VS Code, etc.).
+This ticker was designed to be easy for anyone to modify. You only need to edit two files with a basic text editor (like Notepad on Windows or TextEdit on Mac).
 
-**⭐ Important! After saving changes to the files, you must refresh the ticker in OBS to see them.** Go to the Browser Source's **Properties** and click the **"Refresh cache of current page"** button at the bottom.
-
-
+**⭐ Important!** After you save changes to the files, you must refresh the ticker in OBS to see them. Go to the Browser Source's **Properties** and click the **"Refresh cache of current page"** button at the bottom.
 
 ---
 
-### Appearance (`style.css`)
+### Changing Colors & Appearance (`style.css`)
 
-To change the look of the ticker, open the **`style.css`** file. All settings are in the "CUSTOMIZE SETTINGS HERE" section at the top.
+To change the look of the ticker, open the **`style.css`** file. All the settings you need are in the "CUSTOMIZE COLORS HERE" section at the very top.
 
-| Variable | Description |
-| :--- | :--- |
-| `--primary-color` | The main color for the text and borders. |
-| `--primary-glow-color` | The color of the "neon" glow effect on the text and borders. |
-| `--accent-color`| The color of the bullet points between messages. |
-| `--accent-glow-color` | The color of the glow effect on the bullet points. |
-| `--bg-gradient-start` | The start color of the background gradient (left side). |
-| `--bg-gradient-middle` | The middle color of the background gradient. |
-| `--bg-gradient-end`| The end color of the background gradient (right side). |
-| `--ticker-height`| The total height of the ticker bar in pixels. |
-| `--font-size`| The font size of the main scrolling text in pixels. |
-| `--border-thickness`| The thickness of the top and bottom borders in pixels. |
+```css
+:root {
+    /* Main text and border color */
+    --primary-color: #00ff9d; 
+    
+    /* Color for the glowing effect */
+    --primary-glow-color: rgba(0, 255, 157, 0.7);
 
-*You can use simple color names (like `red`, `gold`) or hex color codes (like `#FF5733`). For a great online color picker, check out [htmlcolorcodes.com](https://htmlcolorcodes.com/).*
+    /* Color for the bullet points */
+    --accent-color: #ff00dd;
+
+    /* ... and more ... */
+}
+```
+
+You can change any color value. Use simple color names (like red, gold, skyblue) or hex color codes (like #FF5733).
+
+For a great online color picker, check out [htmlcolorcodes.com](https://htmlcolorcodes.com).
 
 ---
 
-### Behavior & Content (`script.js`)
+### Changing Speed, Text, & Data Source (`script.js`)
 
 To change how the ticker behaves, open the **`script.js`** file. All settings are in the "CUSTOMIZE SETTINGS HERE" section at the top.
 
-| Setting | Description |
-| :--- | :--- |
-| `speedFactor` | Controls the scroll speed. **A higher number means a slower scroll**. A value of `0.1` is very fast, while `0.5` is very slow. |
-| `minDuration` | The minimum scroll time in seconds, even for very short text. Prevents short messages from flying by too quickly. |
-| `useRssFeed` | This is the main switch. Set to `true` to activate the RSS feed, or `false` to use your custom messages. |
-| `rssUrl` | If `useRssFeed` is `true`, paste the URL of the feed you want to use here. |
-| `customText`| If `useRssFeed` is `false`, edit this list of messages. Make sure each message is inside quotes `""` and followed by a comma `,`. |
-| `rssRefreshIntervalMinutes` | How often (in minutes) the ticker checks the RSS feed for new headlines. |
+```javascript
+const CONFIG = {
+    // How fast the text scrolls. Higher number = SLOWER scroll.
+    speedFactor: 0.2,
+
+    // Set to 'true' to use an RSS feed, 'false' for custom text.
+    useRssFeed: false, 
+
+    // The RSS feed URL to use if useRssFeed is true.
+    rssUrl: "https://gamerant.com/feed/gaming/",
+    
+    // Your custom messages to display if useRssFeed is false.
+    customText: [
+        "Welcome to my stream",
+        "Follow for more content"
+    ]
+};
+```
+
+- **speedFactor:** Controls the scroll speed. Higher number = slower scroll. A value of 0.1 is very fast, while 0.5 is very slow.  
+- **useRssFeed:** This is the main switch. Set to true to activate the RSS feed, or false to use your custom messages.  
+- **rssUrl:** If useRssFeed is true, paste the URL of the feed you want to use here.  
+- **customText:** If useRssFeed is false, you can edit this list of messages. Just make sure each message is inside quotes `""` and followed by a comma `,`.  
 
 ---
 
 ## Troubleshooting 🛠️
 
-* **Ticker is not showing up:**
-    * Double-check that the "Local file" path in the Browser Source properties is correct.
-    * Make sure the source is visible in the Sources dock (the eye icon should be open).
+**Ticker is not showing up:**  
+- Double-check that the "Local file" path in the Browser Source properties is correct.  
+- Make sure the source is visible in the Sources dock (the eye icon should be open).  
 
-* **Text is small, black, and not moving:**
-    * This almost always means the `style.css` file is not loading.
-    * Confirm all three files (`index.html`, `style.css`, `script.js`) are in the same folder.
-    * Check for typos in the filenames.
-    * Make sure your `style.css` file didn't accidentally get saved as `style.css.txt`. (In Windows, go to `View > Show > File name extensions` to check).
+**RSS Feed shows an "Error loading..." message:**  
+- The RSS feed URL in `script.js` might be incorrect or the website might be down.  
+- The public CORS proxy used to fetch the feed may be temporarily unavailable. This is a free service and can sometimes be unreliable.  
 
-* **RSS Feed shows an "Error loading..." message:**
-    * The `rssUrl` in `script.js` might be incorrect or the website might be down.
-    * The public CORS proxy used to fetch the feed is a free demo and can sometimes be unreliable. For serious use, you may need to find a different proxy.
+---
 
-* **Advanced Troubleshooting (Inspect Element):**
-    * If you're still having issues, you can debug the browser source directly.
-    * Right-click the ticker **in the main OBS preview window** and select **Inspect**.
-    * In the new "DevTools" window that pops up, click the **Console** tab and look for any red error messages. This will often tell you the exact problem.
-    * *(Note: This requires "Browser Source Hardware Acceleration" to be enabled in `OBS Settings > Advanced`)*.
+## License 📜
+This project is licensed under the MIT License.
+
+Copyright (c) 2025 Derek-G1
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
