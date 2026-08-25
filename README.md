@@ -1,168 +1,255 @@
-# OBS Ticker v2 - Configuração Cross-Platform
+# RSS OBS LowerThird
 
-Ticker RSS animado para OBS Studio com configurador visual, funcionando em **Linux, Windows e macOS**.
-
-## 🚀 Início Rápido
-
-### Linux / macOS
-```bash
-# Opção 1: Script executável (recomendado)
-cd /run/media/system/Geral/apps/OBS/rss/OBS_Ticker_v2
-chmod +x iniciar_ticker.sh
-./iniciar_ticker.sh
-
-# Opção 2: Python direto
-python3 server.py --port 8082
-```
-
-### Windows
-```cmd
-REM Opção 1: Clique duas vezes no arquivo
-iniciar_ticker.bat
-
-REM Opção 2: Prompt de comando
-cd C:\caminho\para\OBS_Ticker_v2
-python server.py --port 8082
-```
-
-### Acessar
-- **Configurador Visual**: http://localhost:8082/configurator.html
-- **Ticker para OBS**: http://localhost:8082/
+Ticker RSS animado para OBS Studio com configurador visual, funcionando em Linux, Windows e macOS.
 
 ---
 
-## ⚙️ Linux: Systemd User Service (Produção)
+## Sobre este projeto
 
-Para rodar **automaticamente no login**, com **reinício automático** e **logs centralizados**:
+Esta criadora não é desenvolvedora de software. Este projeto foi desenvolvido com o uso do **Agent Hermes** com o modelo **nvidia/nemotron-3-ultra-550b-a55b:free**.
 
-### Instalação única
+**Colaboradora**: Amielle (Amielle-Inside)
+
+Baseado no projeto original **OBS_Ticker_v2** de **Derek-G1** (https://github.com/Derek-G1/OBS_Ticker_v2).
+
+---
+
+## Imagem de exemplo
+
+![Exemplo do RSS OBS LowerThird](exemplo.png)
+
+---
+
+## Instalação por plataforma
+
+### Linux
+
+#### Requisitos
+- Python 3.6 ou superior
+- systemd (para instalação como serviço, opcional)
+
+#### Instalação rápida (teste)
+
 ```bash
-# 1. Copiar service file
-cp /run/media/system/Geral/apps/OBS/rss/OBS_Ticker_v2/obs-ticker-server.service \
-   ~/.config/systemd/user/
+# 1. Baixe ou clone o repositório
+git clone https://github.com/Amielle-Inside/RSS-OBS-LowerThird.git
+cd RSS-OBS-LowerThird
 
-# 2. Recarregar e ativar
+# 2. Dê permissão de execução ao script
+chmod +x iniciar_ticker.sh
+
+# 3. Execute
+./iniciar_ticker.sh
+```
+
+#### Instalação como serviço (produção - inicia automaticamente no login)
+
+```bash
+# 1. Baixe ou clone o repositório
+git clone https://github.com/Amielle-Inside/RSS-OBS-LowerThird.git
+cd RSS-OBS-LowerThird
+
+# 2. Copie o arquivo de serviço para a pasta do systemd do usuário
+mkdir -p ~/.config/systemd/user
+cp obs-ticker-server.service ~/.config/systemd/user/
+
+# 3. Recarregue o systemd e ative o serviço
 systemctl --user daemon-reload
 systemctl --user enable --now obs-ticker-server.service
 ```
 
-### Verificação
+#### Verificar se está funcionando
+
 ```bash
-# Status do serviço
+# Ver status do serviço
 systemctl --user status obs-ticker-server.service
 
-# Logs em tempo real
+# Ver logs em tempo real
 journalctl --user -u obs-ticker-server.service -f
 
-# Testar se responde
-curl -s http://localhost:8082/ | head -3
+# Testar se o servidor responde
+curl -s http://localhost:8082/ | head -5
 ```
 
-### Desinstalação
+#### Parar ou remover o serviço
+
 ```bash
+# Parar e desativar
 systemctl --user disable --now obs-ticker-server.service
+
+# Remover arquivo de serviço
 rm ~/.config/systemd/user/obs-ticker-server.service
 systemctl --user daemon-reload
 ```
 
 ---
 
-## 🎛️ Configurador Visual
+### Windows
 
-Abra **http://localhost:8082/configurator.html** no navegador para personalizar:
+#### Requisitos
+- Python 3.6 ou superior
+- **Importante**: Durante a instalação do Python, marque a opção **"Add Python to PATH"**
 
-| Painel | Controles |
-|--------|-----------|
-| **Paleta de Cores** | Cores dinâmicas com alpha, organizadas por papel (texto, bullets, glow, borda) |
-| **Fundo** | Sólido, Gradiente Linear/Radial/Cônico, alpha por parada |
-| **Bordas** | Largura, raio, 5 presets (quadrado→circular), estilos (sólido/tracejado/gradiente) |
-| **Tipografia** | 8 Google Fonts + custom, tamanho/peso/spacing/sombra |
-| **Comportamento** | Velocidade, duração mínima, direção (RTL/LTR), pause-on-hover, intervalo RSS |
-| **Preview** | Live preview sticky que não reinicia a animação RSS |
+#### Instalação
 
-**Salvar**: Clique 💾 **Salvar** → escolha a pasta `OBS_Ticker_v2` → OBS: *Refresh cache*
+1. Baixe o repositório:
+   - Opção A: Clique em "Code" > "Download ZIP" no GitHub e extraia
+   - Opção B: Use Git: `git clone https://github.com/Amielle-Inside/RSS-OBS-LowerThird.git`
 
----
+2. Abra a pasta `RSS-OBS-LowerThird`
 
-## 📡 Configuração OBS Studio
+3. **Duplo clique** no arquivo `iniciar_ticker.bat`
 
-1. **Adicionar Fonte** → **Browser Source**
-2. **Desmarcar** "Local file"
-3. **URL**: `http://localhost:8082/`
-4. **Largura**: 1920 (ou largura do canvas)
-5. **Altura**: 150-220 (ajuste conforme necessário)
-6. **FPS**: 60
-7. Após mudanças no configurador: **Botão direito na fonte** → **Propriedades** → **Refresh cache of current page**
-
----
-
-## 🔧 RSS Feed
-
-**Atual**: `https://www.newsinside.org/feed/` (configurado no `script.js`)
-
-Para alterar:
-1. Abra o **Configurador Visual** → painel *Comportamento* → *URL do RSS*
-2. Ou edite `script.js` diretamente:
-   ```javascript
-   const CONFIG = {
-       rssUrl: "https://SEU_FEED_AQUI/feed/",
-       // ...
-   };
+   Ou, se preferir pelo prompt de comando:
+   ```cmd
+   cd C:\caminho\para\RSS-OBS-LowerThird
+   python server.py --port 8082
    ```
 
-> **Nota**: Usa **rss2json.com** como proxy CORS (grátis, sem chave). Funciona com qualquer feed RSS público.
+#### Verificar se está funcionando
+
+- Abra o navegador e acesse: `http://localhost:8082/configurator.html`
+- Deve abrir o configurador visual
 
 ---
 
-## 📁 Estrutura de Arquivos
+### macOS
+
+#### Requisitos
+- Python 3.6 ou superior
+- Instale com Homebrew: `brew install python3`
+
+#### Instalação
+
+1. Baixe o repositório:
+   - Opção A: Clique em "Code" > "Download ZIP" no GitHub e extraia
+   - Opção B: Use Git: `git clone https://github.com/Amielle-Inside/RSS-OBS-LowerThird.git`
+
+2. Abra o Terminal e vá até a pasta:
+   ```bash
+   cd ~/caminho/para/RSS-OBS-LowerThird
+   ```
+
+3. Dê permissão de execução e rode:
+   ```bash
+   chmod +x iniciar_ticker.command
+   ./iniciar_ticker.command
+   ```
+
+   Ou clique duas vezes no arquivo `iniciar_ticker.command` no Finder (após dar permissão com `chmod +x`).
+
+---
+
+## Como usar
+
+### 1. Acesse o configurador visual
+
+Abra no navegador: **http://localhost:8082/configurator.html**
+
+### 2. Personalize o ticker
+
+No configurador você pode ajustar:
+
+- **Paleta de Cores**: Cores do texto, bullets, brilho e borda com controle de transparência
+- **Fundo**: Sólido, gradiente linear, radial ou cônico
+- **Bordas**: Largura, arredondamento, 5 presets (quadrado a circular), estilos
+- **Tipografia**: 8 fontes do Google Fonts + personalizada, tamanho, peso, espaçamento, sombra
+- **Comportamento**: Velocidade, duração mínima, direção (esquerda/direita), pausa ao passar mouse, intervalo de atualização do RSS
+- **Preview**: Visualização ao vivo que não reinicia a animação
+
+### 3. Salve as alterações
+
+Clique no botão **Salvar** (ícone de disquete) e selecione a pasta `RSS-OBS-LowerThird`.
+
+### 4. Configure no OBS Studio
+
+1. No OBS: **Adicionar Fonte** > **Browser Source** (Navegador)
+2. **Desmarque** "Arquivo local" (Local file)
+3. **URL**: `http://localhost:8082/`
+4. **Largura**: 1920 (ou a largura do seu canvas)
+5. **Altura**: 150 a 220 (ajuste conforme necessário)
+6. **FPS**: 60
+7. Clique em OK
+
+### 5. Atualize o cache após mudanças
+
+Sempre que mudar algo no configurador:
+- Botão direito na fonte Browser Source no OBS
+- **Propriedades**
+- **Refresh cache of current page** (Atualizar cache da página atual)
+
+---
+
+## Configurar o feed RSS
+
+O feed padrão é: `https://www.newsinside.org/feed/`
+
+### Pelo configurador visual
+1. Abra `http://localhost:8082/configurator.html`
+2. Vá no painel **Comportamento**
+3. Altere o campo **URL do RSS**
+4. Salve
+
+### Editando o arquivo diretamente
+Edite `script.js` e altere:
+```javascript
+const CONFIG = {
+    rssUrl: "https://SEU_FEED_AQUI/feed/",
+    // ... outras configurações
+};
+```
+
+> **Nota**: O projeto usa o serviço **rss2json.com** como proxy CORS (gratuito, sem chave). Funciona com qualquer feed RSS público.
+
+---
+
+## Estrutura de arquivos
 
 ```
-OBS_Ticker_v2/
-├── index.html              # Ticker principal (OBS aponta aqui)
-├── configurator.html       # Configurador visual (abra no navegador)
-├── script.js               # Lógica do ticker + CONFIG
-├── style.css               # Estilos (gerado pelo configurador)
-├── server.py               # Servidor HTTP Python (cross-platform)
-├── iniciar_ticker.sh       # Launcher Linux/macOS
-├── iniciar_ticker.bat      # Launcher Windows
-├── iniciar_ticker.command  # Launcher macOS (clique duplo)
-├── obs-ticker-server.service  # systemd user service (Linux)
-└── README.md               # Este arquivo
+RSS-OBS-LowerThird/
+├── index.html                 # Ticker principal (OBS aponta aqui)
+├── configurator.html          # Configurador visual (abra no navegador)
+├── script.js                  # Lógica do ticker + configurações
+├── style.css                  # Estilos (gerado pelo configurador)
+├── server.py                  # Servidor HTTP Python (multiplataforma)
+├── iniciar_ticker.sh          # Inicializador Linux
+├── iniciar_ticker.bat         # Inicializador Windows
+├── iniciar_ticker.command     # Inicializador macOS (duplo clique)
+├── obs-ticker-server.service  # Serviço systemd (Linux)
+├── exemplo.png                # Imagem de exemplo
+└── README.md                  # Este arquivo
 ```
 
 ---
 
-## 🐛 Solução de Problemas
+## Solução de problemas
 
 | Sintoma | Causa | Solução |
 |---------|-------|---------|
-| "Error loading news feed" | RSS falhou | Verifique `systemctl --user status obs-ticker-server` (Linux) ou console do navegador |
-| Porta 8080 em uso | Steam/outro app | Use porta 8082 (padrão) ou outra |
-| Feed não atualiza | Cache OBS | *Refresh cache of current page* nas propriedades da fonte |
+| "Error loading news feed" | Falha ao buscar RSS | Verifique `systemctl --user status obs-ticker-server` (Linux) ou console do navegador (F12) |
+| Porta 8080 em uso | Steam ou outro app | Use porta 8082 (padrão) ou altere no comando/serviço |
+| Feed não atualiza | Cache do OBS | Botão direito na fonte > Propriedades > Refresh cache of current page |
 | Erro CORS | Usando `file://` | **Sempre use HTTP**: `http://localhost:8082/` |
-| Cores invertidas | Dark Reader | Configurador tem 5 camadas de proteção; desative extensão se persistir |
-| Fonte não carrega | Google Fonts bloqueado | Verifique conexão; configurador tem fallback |
+| Cores invertidas | Extensão Dark Reader | Desative a extensão; o configurador tem proteção em 5 camadas |
+| Fonte não carrega | Google Fonts bloqueado | Verifique conexão; há fallback para fontes do sistema |
 
 ---
 
-## 📦 Requisitos
+## Créditos
 
-| Plataforma | Requisitos |
-|------------|------------|
-| **Linux** | Python 3.6+, systemd (para service) |
-| **Windows** | Python 3.6+ (marcar "Add to PATH") |
-| **macOS** | Python 3.6+ (`brew install python3`) |
+- **Projeto original**: [OBS_Ticker_v2](https://github.com/Derek-G1/OBS_Ticker_v2) por **Derek-G1** (MIT License)
+- **Proxy RSS**: [rss2json.com](https://rss2json.com/) - API gratuita para contornar CORS
+- **Fontes**: Google Fonts (Orbitron, Rajdhani, Exo 2, Share Tech Mono, JetBrains Mono, Fira Code)
 
 ---
 
-## 🔗 Referências
+## Suporte
 
-- **Repositório original**: https://github.com/Derek-G1/OBS_Ticker_v2
-- **rss2json API**: https://rss2json.com/
-- **OBS Browser Source docs**: https://obsproject.com/wiki/Browser-Source
+- **Issues no GitHub**: https://github.com/Amielle-Inside/RSS-OBS-LowerThird/issues
+- **Telegram**: https://t.me/newsinsidechat
 
 ---
 
-## 📝 Licença
+## Licença
 
-MIT - Baseado em [OBS_Ticker_v2](https://github.com/Derek-G1/OBS_Ticker_v2) por Derek-G1.
+MIT - Baseado no [OBS_Ticker_v2](https://github.com/Derek-G1/OBS_Ticker_v2) por Derek-G1.
