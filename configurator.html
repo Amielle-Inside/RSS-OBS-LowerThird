@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>OBS Ticker Configurator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Prevent Dark Reader and similar extensions from modifying colors -->
+<meta name="color-scheme" content="dark light">
+<style>
+:root {
+  /* Force these exact values - extensions typically respect !important on root vars */
+  --ui-bg: #1a1a2e !important;
+  --ui-panel: #16213e !important;
+  --ui-border: #0f3460 !important;
+  --ui-accent: #e94560 !important;
+  --ui-text: #eaeaea !important;
+  --ui-muted: #888 !important;
+  --ui-input: #0f3460 !important;
+  --ui-success: #27ae60 !important;
+}
+/* Opt-out of Dark Reader for specific elements */
+[data-darkreader-ignore],
+[data-darkreader-ignore] * {
+  background-color: inherit !important;
+  color: inherit !important;
+  border-color: inherit !important;
+}
+/* Prevent filter inversion on the whole page */
+html {
+  filter: none !important;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  min-height: 100vh;
+  padding: 24px;
+}
+h1 { font-size: 1.5rem; margin-bottom: 8px; color: var(--ui-accent); }
+.subtitle { color: var(--ui-muted); margin-bottom: 24px; font-size: 0.9rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; max-width: 1400px; }
+.panel {
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.panel h2 { font-size: 1rem; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--ui-border); display: flex; align-items: center; gap: 8px; }
+.panel h2::before { content: ''; width: 10px; height: 10px; background: var(--ui-accent); border-radius: 2px; }
+.field { margin-bottom: 16px; }
+.field:last-child { margin-bottom: 0; }
+label { display: block; font-size: 0.85rem; margin-bottom: 6px; color: var(--ui-muted); }
+.input-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+input[type="text"], input[type="number"], select {
+  padding: 10px 12px; background: var(--ui-input); border: 1px solid var(--ui-border);
+  border-radius: 8px; color: var(--ui-text); font-size: 0.9rem; outline: none; transition: border-color 0.2s;
+}
+input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--ui-accent); }
+input[type="color"] { width: 44px; height: 44px; border: none; border-radius: 8px; cursor: pointer; background: none; padding: 2px; }
+.color-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.color-row input[type="text"] { flex: 1; min-width: 100px; }
+.color-row input[type="number"] { width: 70px; }
+.checkbox-row { display: flex; align-items: center; gap: 10px; }
+.checkbox-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ui-accent); cursor: pointer; }
+.checkbox-row label { margin: 0; cursor: pointer; font-size: 0.9rem; color: var(--ui-text); }
+
+/* Slider + Number sync */
+.slider-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.slider-row input[type="range"] { flex: 1; min-width: 150px; accent-color: var(--ui-accent); }
+.slider-row input[type="number"] { width: 70px; }
+
+/* Multi-color manager */
+.color-list { display: flex; flex-direction: column; gap: 8px; }
+.color-item { display: flex; align-items: center; gap: 10px; background: var(--ui-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--ui-border); }
+.color-item input[type="color"] { width: 36px; height: 36px; }
+.color-item input[type="text"] { flex: 1; min-width: 100px; }
+.color-item input[type="number"] { width: 70px; }
+.color-item .btn-del { background: transparent; border: 1px solid var(--ui-border); color: var(--ui-muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+.color-item .btn-del:hover { border-color: #e94560; color: #e94560; }
+.btn-add { background: var(--ui-border); color: var(--ui-text); border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; }
+.btn-add:hover { background: var(--ui-accent); color: white; }
+
+/* Border radius presets */
+.radius-presets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px; }
+.radius-preset { aspect-ratio: 1; border: 2px solid var(--ui-border); border-radius: var(--preset-radius); background: var(--ui-input); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--ui-muted); }
+.radius-preset:hover, .radius-preset.active { border-color: var(--ui-accent); color: var(--ui-accent); background: rgba(233, 69, 96, 0.1); }
+
+.font-preview { font-family: var(--preview-font, inherit); font-size: var(--preview-size, 1rem); padding: 12px; background: var(--ui-input); border-radius: 8px; border: 1px solid var(--ui-border); margin-top: 8px; min-height: 1.5em; }
+.gradient-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gradient-stop { display: flex; flex-direction: column; gap: 4px; }
+.gradient-stop label { font-size: 0.8rem; }
+.actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+.btn { padding: 12px 24px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+.btn-primary { background: var(--ui-accent); color: white; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary { background: var(--ui-border); color: var(--ui-text); }
+.btn-secondary:hover { background: #1a4a7a; }
+.btn-success { background: var(--ui-success); color: white; }
+.btn-success:hover { filter: brightness(1.1); }
+.preview-panel { position: sticky; top: 24px; align-self: start; }
+.preview-frame { border-radius: 12px; overflow: hidden; border: 2px solid var(--ui-border); background: #000; height: 220px; }
+.preview-frame iframe { width: 100%; height: 100%; border: none; display: block; }
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 24px; border-radius: 8px; background: var(--ui-panel); border: 1px solid var(--ui-border); color: var(--ui-text); box-shadow: 0 8px 32px rgba(0,0,0,0.4); transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 1000; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-color: var(--ui-success); }
+.toast.error { border-color: var(--ui-accent); }
+@media (max-width: 768px) { .gradient-editor { grid-template-columns: 1fr; } .radius-presets { grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body data-darkreader-ignore>
+<h1>OBS Ticker Configurator</h1>
+<p class="subtitle">Configure cores (com alpha), fontes, bordas, gradientes. Preview ao vivo + exportação para OBS.</p>
+
+<div class="grid" data-darkreader-ignore>
+  <div data-darkreader-ignore>
+    <!-- Colors - Dynamic List with Alpha -->
+    <div class="panel">
+      <h2>🎨 Paleta de Cores (com Alpha)</h2>
+      <p style="font-size:0.8rem;color:var(--ui-muted);margin-bottom:12px;">Adicione/remova cores. Alpha = 0 (transparente) a 255 (opaco) ou 0-1.</p>
+      <div class="color-list" id="colorList"></div>
+      <button class="btn-add" id="btnAddColor">+ Adicionar Cor</button>
+    </div>
+
+    <!-- Background -->
+    <div class="panel">
+      <h2>🖼️ Fundo do Ticker</h2>
+      <div class="field">
+        <div class="checkbox-row">
+          <input type="checkbox" id="bgEnabled" checked>
+          <label for="bgEnabled">Fundo ativo</label>
+        </div>
+      </div>
+      <div class="field" id="bgTypeRow">
+        <label>Tipo de fundo</label>
+        <select id="bgType">
+          <option value="solid">Sólido</option>
+          <option value="gradient" selected>Gradiente Linear</option>
+          <option value="gradient-radial">Gradiente Radial</option>
+          <option value="gradient-conic">Gradiente Cônico</option>
+        </select>
+      </div>
+      <div class="field" id="bgSolidRow">
+        <label>Cor sólida</label>
+        <div class="color-row">
+          <input type="color" id="bgSolidColor" value="#0a0a1a">
+          <input type="text" id="bgSolidColorHex" value="#0a0a1a" placeholder="#RRGGBB">
+          <label style="font-size:0.8rem;white-space:nowrap;">Alpha</label>
+          <input type="range" id="bgSolidAlpha" min="0" max="1" step="0.01" value="0.9">
+          <input type="number" id="bgSolidAlphaNum" min="0" max="1" step="0.01" value="0.9">
+        </div>
+      </div>
+      <div class="field gradient-editor" id="bgGradRow">
+        <div class="gradient-stop">
+          <label>Início</label>
+          <div class="color-row">
+            <input type="color" id="bgGradStart" value="#0a0a1a">
+            <input type="text" id="bgGradStartHex" value="#0a0a1a" placeholder="#RRGGBB">
+            <label style="font-size:0.8rem;white-space:nowrap;">Alpha</label>
+            <input type="range" id="bgGradStartAlpha" min="0" max="1" step="0.01" value="1">
+            <input type="number" id="bgGradStartAlphaNum" min="0" max="1" step="0.01" value="1">
+          </div>
+        </div>
+        <div class="gradient-stop">
+          <label>Fim</label>
+          <div class="color-row">
+            <input type="color" id="bgGradEnd" value="#1a1a3e">
+            <input type="text" id="bgGradEndHex" value="#1a1a3e" placeholder="#RRGGBB">
+            <label style="font-size:0.8rem;white-space:nowrap;">Alpha</label>
+            <input type="range" id="bgGradEndAlpha" min="0" max="1" step="0.01" value="1">
+            <input type="number" id="bgGradEndAlphaNum" min="0" max="1" step="0.01" value="1">
+          </div>
+        </div>
+      </div>
+      <div class="field" id="bgGradDirRow">
+        <label>Direção do gradiente</label>
+        <select id="bgGradDirection">
+          <option value="to right">→ Direita</option>
+          <option value="to left">← Esquerda</option>
+          <option value="to bottom">↓ Baixo</option>
+          <option value="to top">↑ Cima</option>
+          <option value="to bottom right" selected>↘ Diagonal</option>
+          <option value="to top right">↗ Diagonal inversa</option>
+          <option value="45deg">45°</option>
+          <option value="135deg">135°</option>
+        </select>
+      </div>
+      <div class="field" id="bgRadialRow" style="display:none;">
+        <label>Posição radial (ex: center, 50% 50%, circle at top left)</label>
+        <input type="text" id="bgRadialPos" value="center" placeholder="center">
+      </div>
+    </div>
+
+    <!-- Border -->
+    <div class="panel">
+      <h2>📐 Bordas</h2>
+      <div class="field">
+        <div class="checkbox-row">
+          <input type="checkbox" id="borderEnabled" checked>
+          <label for="borderEnabled">Mostrar borda</label>
+        </div>
+      </div>
+      <div class="field" id="borderWidthRow">
+        <label>Espessura</label>
+        <div class="slider-row">
+          <input type="range" id="borderWidth" min="0" max="20" value="2">
+          <input type="number" id="borderWidthNum" min="0" max="20" value="2">
+        </div>
+      </div>
+      <div class="field" id="borderRadiusRow">
+        <label>Raio das bordas</label>
+        <div class="slider-row">
+          <input type="range" id="borderRadius" min="0" max="100" value="12">
+          <input type="number" id="borderRadiusNum" min="0" max="100" value="12">
+        </div>
+        <div class="radius-presets" id="radiusPresets"></div>
+      </div>
+      <div class="field" id="borderStyleRow">
+        <label>Estilo da borda</label>
+        <select id="borderStyle">
+          <option value="solid">Sólida</option>
+          <option value="dashed">Tracejada</option>
+          <option value="dotted">Pontilhada</option>
+          <option value="double">Dupla</option>
+          <option value="gradient" selected>Gradiente</option>
+        </select>
+      </div>
+      <div class="field" id="borderSolidRow">
+        <label>Cor sólida</label>
+        <div class="color-row">
+          <input type="color" id="borderSolidColor" value="#00ff9d">
+          <input type="text" id="borderSolidColorHex" value="#00ff9d" placeholder="#RRGGBB">
+          <label style="font-size:0.8rem;white-space:nowrap;">Alpha</label>
+          <input type="range" id="borderSolidAlpha" min="0" max="1" step="0.01" value="1">
+          <input type="number" id="borderSolidAlphaNum" min="0" max="1" step="0.01" value="1">
+        </div>
+      </div>
+      <div class="field gradient-editor" id="borderGradRow">
+        <div class="gradient-stop">
+          <label>Início</label>
+          <div class="color-row">
+            <input type="color" id="borderGradStart" value="#00ff9d">
+            <input type="text" id="borderGradStartHex" value="#00ff9d" placeholder="#RRGGBB">
+            <label style="font-size:0.8rem;white-space:nowrap;">Alpha</label>
+            <input type="range" id="borderGradStartAlpha" min="0" max="1" step="0.01" value="1">
+            <input type="number" id="borderGradStartAlphaNum" min="0" max="1" step="0.01" value="1">
+          </div>
+        </div>
+        <div class="gradient-stop">
+          <label>Fim</label>
+          <div class="color-row">
+            <input type="color" id="borderGradEnd" value="#ff00dd">
+            <input type="text" id="borderGradEndHex" value="#ff00dd" placeholder="#RRGGBB">
+            <label style="font-size:0.8rem;white-space:nowrap;">Alpha</label>
+            <input type="range" id="borderGradEndAlpha" min="0" max="1" step="0.01" value="1">
+            <input type="number" id="borderGradEndAlphaNum" min="0" max="1" step="0.01" value="1">
+          </div>
+        </div>
+      </div>
+      <div class="field" id="borderGradDirRow">
+        <label>Direção do gradiente da borda</label>
+        <select id="borderGradDirection">
+          <option value="to right">→ Horizontal</option>
+          <option value="to bottom">↓ Vertical</option>
+          <option value="to bottom right" selected>↘ Diagonal</option>
+          <option value="45deg">45°</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Typography -->
+    <div class="panel">
+      <h2>🔤 Tipografia & Cores do Texto</h2>
+      <div class="field">
+        <label>Fonte principal</label>
+        <select id="fontFamily">
+          <option value="'Orbitron', sans-serif">Orbitron (padrão)</option>
+          <option value="'Rajdhani', sans-serif">Rajdhani</option>
+          <option value="'Exo 2', sans-serif">Exo 2</option>
+          <option value="'Share Tech Mono', monospace">Share Tech Mono</option>
+          <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+          <option value="'Fira Code', monospace">Fira Code</option>
+          <option value="'Segoe UI', system-ui, sans-serif">Segoe UI</option>
+          <option value="'Roboto', sans-serif">Roboto</option>
+          <option value="'Inter', sans-serif">Inter</option>
+          <option value="custom">✏️ Personalizada...</option>
+        </select>
+      </div>
+      <div class="field" id="customFontRow" style="display:none;">
+        <label>Nome da fonte customizada</label>
+        <input type="text" id="customFontName" placeholder="Ex: 'Minha Fonte', sans-serif">
+      </div>
+      <div class="field">
+        <label>Cor do texto principal</label>
+        <div class="color-row">
+          <input type="color" id="textPrimaryColor" value="#00ff9d">
+          <input type="text" id="textPrimaryColorHex" value="#00ff9d" placeholder="#RRGGBB">
+          <label style="font-size:0.8rem;white-space:nowrap;">Alpha</label>
+          <input type="range" id="textPrimaryAlpha" min="0" max="1" step="0.01" value="1">
+          <input type="number" id="textPrimaryAlphaNum" min="0" max="1" step="0.01" value="1">
+        </div>
+      </div>
+      <div class="field">
+        <label>Cor dos bullets ●</label>
+        <div class="color-row">
+          <input type="color" id="textBulletColor" value="#ff00dd">
+          <input type="text" id="textBulletColorHex" value="#ff00dd" placeholder="#RRGGBB">
+          <label style="font-size:0.8rem;white-space:nowrap;">Alpha</label>
+          <input type="range" id="textBulletAlpha" min="0" max="1" step="0.01" value="1">
+          <input type="number" id="textBulletAlphaNum" min="0" max="1" step="0.01" value="1">
+        </div>
+      </div>
+      <div class="field">
+        <label>Cor do texto secundário</label>
+        <div class="color-row">
+          <input type="color" id="textSecondaryColor" value="#aaaaaa">
+          <input type="text" id="textSecondaryColorHex" value="#aaaaaa" placeholder="#RRGGBB">
+          <label style="font-size:0.8rem;white-space:nowrap;">Alpha</label>
+          <input type="range" id="textSecondaryAlpha" min="0" max="1" step="0.01" value="1">
+          <input type="number" id="textSecondaryAlphaNum" min="0" max="1" step="0.01" value="1">
+        </div>
+      </div>
+      <div class="field">
+        <label>Tamanho da fonte</label>
+        <div class="slider-row">
+          <input type="range" id="fontSize" min="8" max="96" value="22">
+          <input type="number" id="fontSizeNum" min="8" max="96" value="22">
+        </div>
+      </div>
+      <div class="field">
+        <label>Peso da fonte</label>
+        <select id="fontWeight">
+          <option value="100">Thin (100)</option>
+          <option value="200">Extra Light (200)</option>
+          <option value="300">Light (300)</option>
+          <option value="400">Normal (400)</option>
+          <option value="500">Medium (500)</option>
+          <option value="600">Semi-bold (600)</option>
+          <option value="700" selected>Bold (700)</option>
+          <option value="800">Extra-bold (800)</option>
+          <option value="900">Black (900)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Espaçamento entre letras</label>
+        <div class="slider-row">
+          <input type="range" id="letterSpacing" min="-3" max="20" step="0.5" value="1">
+          <input type="number" id="letterSpacingNum" min="-3" max="20" step="0.5" value="1">
+        </div>
+      </div>
+      <div class="field">
+        <label>Altura da linha</label>
+        <div class="slider-row">
+          <input type="range" id="lineHeight" min="1" max="3" step="0.05" value="1.2">
+          <input type="number" id="lineHeightNum" min="1" max="3" step="0.05" value="1.2">
+        </div>
+      </div>
+      <div class="field">
+        <label>Transformação do texto</label>
+        <select id="textTransform">
+          <option value="none">Nenhuma</option>
+          <option value="uppercase" selected>MAIÚSCULAS</option>
+          <option value="lowercase">minúsculas</option>
+          <option value="capitalize">Capitalizar</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Sombra do texto</label>
+        <div class="checkbox-row">
+          <input type="checkbox" id="textShadowEnabled" checked>
+          <label for="textShadowEnabled">Ativar sombra</label>
+        </div>
+      </div>
+      <div class="field" id="textShadowColorRow">
+        <label>Cor da sombra</label>
+        <div class="color-row">
+          <input type="color" id="textShadowColor" value="#00ff9d">
+          <input type="text" id="textShadowColorHex" value="#00ff9d" placeholder="#RRGGBB">
+          <label style="font-size:0.8rem;white-space:nowrap;">Alpha</label>
+          <input type="range" id="textShadowAlpha" min="0" max="1" step="0.01" value="0.8">
+          <input type="number" id="textShadowAlphaNum" min="0" max="1" step="0.01" value="0.8">
+        </div>
+      </div>
+      <div class="field" id="textShadowBlurRow">
+        <label>Desfoque da sombra</label>
+        <div class="slider-row">
+          <input type="range" id="textShadowBlur" min="0" max="50" value="8">
+          <input type="number" id="textShadowBlurNum" min="0" max="50" value="8">
+        </div>
+      </div>
+      <div class="field" id="textShadowOffsetRow">
+        <label>Offset X / Y da sombra</label>
+        <div class="slider-row">
+          <input type="range" id="textShadowOffsetX" min="-20" max="20" value="0">
+          <input type="number" id="textShadowOffsetXNum" min="-20" max="20" value="0">
+          <span style="color:var(--ui-muted);">/</span>
+          <input type="range" id="textShadowOffsetY" min="-20" max="20" value="0">
+          <input type="number" id="textShadowOffsetYNum" min="-20" max="20" value="0">
+        </div>
+      </div>
+      <div class="field">
+        <label>Pré-visualização</label>
+        <div class="font-preview" id="fontPreview">NewsInside – fPKGi PS4 "Loja" de Jogos no PS4 ● Novo Desbloqueio PS4</div>
+      </div>
+    </div>
+
+    <!-- Animation / Behavior -->
+    <div class="panel">
+      <h2>⚙️ Comportamento & Animação</h2>
+      <div class="field">
+        <label>Velocidade do scroll (maior = mais lento)</label>
+        <div class="slider-row">
+          <input type="range" id="speedFactor" min="0.02" max="3" step="0.01" value="0.2">
+          <input type="number" id="speedFactorNum" min="0.02" max="3" step="0.01" value="0.2">
+        </div>
+      </div>
+      <div class="field">
+        <label>Duração mínima (segundos)</label>
+        <div class="slider-row">
+          <input type="range" id="minDuration" min="5" max="300" value="30">
+          <input type="number" id="minDurationNum" min="5" max="300" value="30">
+        </div>
+      </div>
+      <div class="field">
+        <label>Direção do scroll</label>
+        <select id="scrollDirection">
+          <option value="rtl" selected>Direita → Esquerda</option>
+          <option value="ltr">Esquerda → Direita</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Pausar no hover</label>
+        <div class="checkbox-row">
+          <input type="checkbox" id="pauseOnHover" checked>
+          <label for="pauseOnHover">Pausar animação ao passar mouse</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Intervalo de atualização RSS (minutos)</label>
+        <div class="slider-row">
+          <input type="range" id="rssRefreshInterval" min="1" max="120" value="5">
+          <input type="number" id="rssRefreshIntervalNum" min="1" max="120" value="5">
+        </div>
+      </div>
+      <div class="field">
+        <label>Máx. itens do RSS (0 = todos)</label>
+        <div class="slider-row">
+          <input type="range" id="maxRssItems" min="0" max="50" value="0">
+          <input type="number" id="maxRssItemsNum" min="0" max="50" value="0">
+        </div>
+      </div>
+      <div class="field">
+        <label>URL do feed RSS</label>
+        <input type="text" id="rssUrl" value="https://www.newsinside.org/feed/" placeholder="https://...">
+      </div>
+      <div class="field">
+        <div class="checkbox-row">
+          <input type="checkbox" id="useRssFeed" checked>
+          <label for="useRssFeed">Usar feed RSS (desmarque para texto customizado)</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="panel" style="text-align:center;">
+      <div class="actions">
+        <button class="btn btn-primary" id="btnApply">🔄 Aplicar no Preview</button>
+        <button class="btn btn-success" id="btnSave">💾 Salvar (style.css + script.js)</button>
+        <button class="btn btn-secondary" id="btnExport">📥 Exportar JSON</button>
+        <button class="btn btn-secondary" id="btnImport">📤 Importar JSON</button>
+        <button class="btn btn-secondary" id="btnReset">🔙 Reset Padrões</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Live Preview -->
+  <div class="preview-panel">
+    <div class="panel" style="padding:0;">
+      <h2 style="margin:0 20px; padding:16px 0; border-bottom:1px solid var(--ui-border); font-size:1rem;">📺 Preview ao Vivo</h2>
+      <div class="preview-frame" data-darkreader-ignore>
+        <iframe id="previewFrame" src="index.html" data-darkreader-ignore></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="jsonImport" accept=".json" style="display:none;">
+
+<script>
+// ===== Default State =====
+const defaultState = {
+  // Dynamic color palette (for background/border gradients, etc.)
+  colors: [
+    { id: 'glow', name: 'Glow/Brilho', color: '#00ff9d', alpha: 0.7 },
+    { id: 'border1', name: 'Borda Início', color: '#00ff9d', alpha: 1 },
+    { id: 'border2', name: 'Borda Fim', color: '#ff00dd', alpha: 1 },
+    { id: 'bg1', name: 'Fundo Início', color: '#0a0a1a', alpha: 1 },
+    { id: 'bg2', name: 'Fundo Fim', color: '#1a1a3e', alpha: 1 },
+  ],
+  // Text colors (moved to Typography)
+  textPrimaryColor: '#00ff9d',
+  textPrimaryAlpha: 1,
+  textBulletColor: '#ff00dd',
+  textBulletAlpha: 1,
+  textSecondaryColor: '#aaaaaa',
+  textSecondaryAlpha: 1,
+  // Background
+  bgEnabled: true,
+  bgType: 'gradient',
+  bgSolidColor: '#0a0a1a',
+  bgSolidAlpha: 0.9,
+  bgGradStart: '#0a0a1a',
+  bgGradStartAlpha: 1,
+  bgGradEnd: '#1a1a3e',
+  bgGradEndAlpha: 1,
+  bgGradDirection: 'to bottom right',
+  bgRadialPos: 'center',
+  // Border
+  borderEnabled: true,
+  borderWidth: 2,
+  borderRadius: 12,
+  borderStyle: 'gradient',
+  borderSolidColor: '#00ff9d',
+  borderSolidAlpha: 1,
+  borderGradStart: '#00ff9d',
+  borderGradStartAlpha: 1,
+  borderGradEnd: '#ff00dd',
+  borderGradEndAlpha: 1,
+  borderGradDirection: 'to bottom right',
+  // Typography
+  fontFamily: "'Orbitron', sans-serif",
+  customFontName: '',
+  fontSize: 22,
+  fontWeight: 700,
+  letterSpacing: 1,
+  lineHeight: 1.2,
+  textTransform: 'uppercase',
+  textShadowEnabled: true,
+  textShadowColor: '#00ff9d',
+  textShadowAlpha: 0.8,
+  textShadowBlur: 8,
+  textShadowOffsetX: 0,
+  textShadowOffsetY: 0,
+  // Behavior
+  speedFactor: 0.2,
+  minDuration: 30,
+  scrollDirection: 'rtl',
+  pauseOnHover: true,
+  rssRefreshInterval: 5,
+  maxRssItems: 0,
+  rssUrl: 'https://www.newsinside.org/feed/',
+  useRssFeed: true
+};
+
+const state = JSON.parse(JSON.stringify(defaultState));
+
+// ===== DOM Elements =====
+const els = {};
+document.querySelectorAll('[id]').forEach(el => { els[el.id] = el; });
+
+// ===== Helpers =====
+function showToast(msg, type = '') {
+  const t = els.toast;
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function syncColorPicker(colorId, hexId) {
+  const c = els[colorId], h = els[hexId];
+  if (!c || !h) return;
+  c.addEventListener('input', () => h.value = c.value);
+  h.addEventListener('input', () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(h.value)) c.value = h.value;
+  });
+}
+
+function syncSliderNumber(sliderId, numId) {
+  const s = els[sliderId], n = els[numId];
+  if (!s || !n) return;
+  s.addEventListener('input', () => n.value = s.value);
+  n.addEventListener('input', () => {
+    const v = parseFloat(n.value);
+    if (!isNaN(v) && v >= parseFloat(s.min) && v <= parseFloat(s.max)) s.value = v;
+  });
+}
+
+function syncAlpha(alphaRangeId, alphaNumId) {
+  syncSliderNumber(alphaRangeId, alphaNumId);
+}
+
+function toggleRows(checkboxId, rowMap) {
+  const cb = els[checkboxId];
+  if (!cb) return;
+  const update = () => {
+    Object.entries(rowMap).forEach(([id, inverse]) => {
+      const el = els[id];
+      if (el) el.style.display = (inverse ? !cb.checked : cb.checked) ? '' : 'none';
+    });
+  };
+  cb.addEventListener('change', update);
+  update();
+}
+
+// ===== Radius Presets =====
+const radiusPresets = [
+  { label: 'Quadrado', radius: 0 },
+  { label: 'Leve', radius: 4 },
+  { label: 'Médio', radius: 12 },
+  { label: 'Arredondado', radius: 24 },
+  { label: 'Circular', radius: 9999 }
+];
+
+function renderRadiusPresets() {
+  const container = els.radiusPresets;
+  container.innerHTML = '';
+  radiusPresets.forEach(p => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'radius-preset' + (state.borderRadius === p.radius ? ' active' : '');
+    btn.style.setProperty('--preset-radius', p.radius === 9999 ? '50%' : p.radius + 'px');
+    btn.textContent = p.label;
+    btn.title = p.radius === 9999 ? 'Circular (50%)' : p.radius + 'px';
+    btn.addEventListener('click', () => {
+      state.borderRadius = p.radius;
+      els.borderRadius.value = p.radius;
+      els.borderRadiusNum.value = p.radius;
+      document.querySelectorAll('.radius-preset').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyToPreview();
+    });
+    container.appendChild(btn);
+  });
+}
+
+// ===== Dynamic Color List =====
+function renderColorList() {
+  const container = els.colorList;
+  container.innerHTML = '';
+  state.colors.forEach((c, idx) => {
+    const div = document.createElement('div');
+        div.className = 'color-item';
+        const isOnlyOne = state.colors.length <= 1;
+        const delAttrs = isOnlyOne ? 'disabled style="opacity:0.4;"' : '';
+        div.innerHTML = `
+          <input type="color" data-idx="${idx}" data-prop="color" value="${c.color}">
+          <input type="text" data-idx="${idx}" data-prop="colorHex" value="${c.color}" placeholder="#RRGGBB" style="flex:1;min-width:100px;">
+          <span style="font-size:0.75rem;color:var(--ui-muted);min-width:50px;text-align:right;">${c.name}</span>
+          <input type="range" data-idx="${idx}" data-prop="alpha" min="0" max="1" step="0.01" value="${c.alpha}" style="width:80px;">
+          <input type="number" data-idx="${idx}" data-prop="alphaNum" min="0" max="1" step="0.01" value="${c.alpha}" style="width:70px;">
+          <button class="btn-del" data-idx="${idx}" ${delAttrs}>✕</button>
+        `;
+    container.appendChild(div);
+  });
+  // Bind events
+  container.querySelectorAll('input[data-idx]').forEach(input => {
+    const idx = parseInt(input.dataset.idx);
+    const prop = input.dataset.prop;
+    if (prop === 'color' || prop === 'colorHex') {
+      input.addEventListener('input', () => {
+        const pair = prop === 'color' ? 'colorHex' : 'color';
+        const other = container.querySelector(`[data-idx="${idx}"][data-prop="${pair}"]`);
+        if (other) other.value = input.value;
+        state.colors[idx].color = input.value;
+        debouncedApply();
+      });
+    } else if (prop === 'alpha' || prop === 'alphaNum') {
+      input.addEventListener('input', () => {
+        const pair = prop === 'alpha' ? 'alphaNum' : 'alpha';
+        const other = container.querySelector(`[data-idx="${idx}"][data-prop="${pair}"]`);
+        if (other) other.value = input.value;
+        state.colors[idx].alpha = parseFloat(input.value);
+        debouncedApply();
+      });
+    }
+  });
+  container.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (state.colors.length <= 1) return;
+      const idx = parseInt(btn.dataset.idx);
+      state.colors.splice(idx, 1);
+      renderColorList();
+      debouncedApply();
+    });
+  });
+}
+
+els.btnAddColor.addEventListener('click', () => {
+  state.colors.push({ id: 'custom' + Date.now(), name: 'Nova cor', color: '#ffffff', alpha: 1 });
+  renderColorList();
+  debouncedApply();
+});
+
+// ===== Init Sync =====
+[
+  ['bgSolidColor','bgSolidColorHex'],
+  ['bgGradStart','bgGradStartHex'],
+  ['bgGradEnd','bgGradEndHex'],
+  ['borderSolidColor','borderSolidColorHex'],
+  ['borderGradStart','borderGradStartHex'],
+  ['borderGradEnd','borderGradEndHex'],
+  ['textShadowColor','textShadowColorHex'],
+  ['textPrimaryColor','textPrimaryColorHex'],
+  ['textBulletColor','textBulletColorHex'],
+  ['textSecondaryColor','textSecondaryColorHex']
+].forEach(([c,h]) => syncColorPicker(c,h));
+
+[
+  ['bgSolidAlpha','bgSolidAlphaNum'],
+  ['bgGradStartAlpha','bgGradStartAlphaNum'],
+  ['bgGradEndAlpha','bgGradEndAlphaNum'],
+  ['borderSolidAlpha','borderSolidAlphaNum'],
+  ['borderGradStartAlpha','borderGradStartAlphaNum'],
+  ['borderGradEndAlpha','borderGradEndAlphaNum'],
+  ['textShadowAlpha','textShadowAlphaNum'],
+  ['textPrimaryAlpha','textPrimaryAlphaNum'],
+  ['textBulletAlpha','textBulletAlphaNum'],
+  ['textSecondaryAlpha','textSecondaryAlphaNum']
+].forEach(([r,n]) => syncAlpha(r,n));
+
+[
+  ['borderWidth','borderWidthNum'],
+  ['borderRadius','borderRadiusNum'],
+  ['fontSize','fontSizeNum'],
+  ['letterSpacing','letterSpacingNum'],
+  ['lineHeight','lineHeightNum'],
+  ['speedFactor','speedFactorNum'],
+  ['minDuration','minDurationNum'],
+  ['rssRefreshInterval','rssRefreshIntervalNum'],
+  ['maxRssItems','maxRssItemsNum'],
+  ['textShadowBlur','textShadowBlurNum'],
+  ['textShadowOffsetX','textShadowOffsetXNum'],
+  ['textShadowOffsetY','textShadowOffsetYNum'],
+].forEach(([s,n]) => syncSliderNumber(s,n));
+
+// Toggles
+toggleRows('bgEnabled', { bgTypeRow:false, bgSolidRow:false, bgGradRow:false, bgGradDirRow:false, bgRadialRow:false });
+toggleRows('borderEnabled', { borderWidthRow:false, borderRadiusRow:false, borderStyleRow:false, borderSolidRow:false, borderGradRow:false, borderGradDirRow:false }, false);
+// bgType toggle
+els.bgType.addEventListener('change', () => {
+  const t = els.bgType.value;
+  els.bgSolidRow.style.display = t === 'solid' ? '' : 'none';
+  els.bgGradRow.style.display = t.startsWith('gradient') ? '' : 'none';
+  els.bgGradDirRow.style.display = t === 'gradient' ? '' : 'none';
+  els.bgRadialRow.style.display = t === 'gradient-radial' ? '' : 'none';
+});
+// borderStyle toggle
+els.borderStyle.addEventListener('change', () => {
+  const t = els.borderStyle.value;
+  els.borderSolidRow.style.display = t === 'solid' || t === 'dashed' || t === 'dotted' || t === 'double' ? '' : 'none';
+  els.borderGradRow.style.display = t === 'gradient' ? '' : 'none';
+  els.borderGradDirRow.style.display = t === 'gradient' ? '' : 'none';
+});
+// Custom font
+els.fontFamily.addEventListener('change', () => {
+  els.customFontRow.style.display = els.fontFamily.value === 'custom' ? '' : 'none';
+});
+// Text shadow
+toggleRows('textShadowEnabled', { textShadowColorRow:false, textShadowBlurRow:false, textShadowOffsetRow:false }, false);
+
+// ===== State <-> UI =====
+function uiToState() {
+  // Simple fields
+  Object.keys(state).forEach(key => {
+    if (key === 'colors') return;
+    const el = els[key];
+    if (!el) return;
+    if (el.type === 'checkbox') state[key] = el.checked;
+    else if (el.type === 'number' || el.type === 'range') state[key] = parseFloat(el.value);
+    else if (el.type === 'color') state[key] = el.value;
+    else state[key] = el.value;
+  });
+  // Font family custom
+  if (els.fontFamily.value === 'custom') state.fontFamily = els.customFontName.value || "'Orbitron', sans-serif";
+}
+
+function stateToUi() {
+  Object.keys(state).forEach(key => {
+    if (key === 'colors') return;
+    const el = els[key];
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = state[key];
+    else if (el.type === 'number' || el.type === 'range') el.value = state[key];
+    else if (el.type === 'color') el.value = state[key];
+    else el.value = state[key];
+  });
+  // Font
+  els.customFontRow.style.display = (els.fontFamily.value === 'custom') ? '' : 'none';
+  // Toggles
+  const bgType = state.bgType;
+  els.bgSolidRow.style.display = bgType === 'solid' ? '' : 'none';
+  els.bgGradRow.style.display = bgType.startsWith('gradient') ? '' : 'none';
+  els.bgGradDirRow.style.display = bgType === 'gradient' ? '' : 'none';
+  els.bgRadialRow.style.display = bgType === 'gradient-radial' ? '' : 'none';
+  const borderStyle = state.borderStyle;
+  els.borderSolidRow.style.display = ['solid','dashed','dotted','double'].includes(borderStyle) ? '' : 'none';
+  els.borderGradRow.style.display = borderStyle === 'gradient' ? '' : 'none';
+  els.borderGradDirRow.style.display = borderStyle === 'gradient' ? '' : 'none';
+  // Radius presets active
+  renderRadiusPresets();
+  // Color list
+  renderColorList();
+  updateFontPreview();
+}
+
+function updateFontPreview() {
+  const p = els.fontPreview;
+  p.style.fontFamily = state.fontFamily;
+  p.style.fontSize = state.fontSize + 'px';
+  p.style.fontWeight = state.fontWeight;
+  p.style.letterSpacing = state.letterSpacing + 'px';
+  p.style.lineHeight = state.lineHeight;
+  p.style.textTransform = state.textTransform;
+  if (state.textShadowEnabled) {
+    const c = hexToRgba(state.textShadowColor, state.textShadowAlpha);
+    p.style.textShadow = `${state.textShadowOffsetX}px ${state.textShadowOffsetY}px ${state.textShadowBlur}px ${c}`;
+  } else {
+    p.style.textShadow = 'none';
+  }
+}
+
+// ===== Generate CSS =====
+function generateCSS() {
+  const s = state;
+
+  // Text colors (from Typography panel)
+  const textPrimary = hexToRgba(s.textPrimaryColor, s.textPrimaryAlpha);
+  const textBullet = hexToRgba(s.textBulletColor, s.textBulletAlpha);
+  const textSecondary = hexToRgba(s.textSecondaryColor, s.textSecondaryAlpha);
+
+  // Get named colors from palette (only glow remains)
+  const getColor = (id, fallback) => {
+    const c = s.colors.find(x => x.id === id);
+    return c ? hexToRgba(c.color, c.alpha) : fallback;
+  };
+  const glow = getColor('glow', 'rgba(0,255,157,0.7)');
+
+  // Background
+  let bg = 'transparent';
+  if (s.bgEnabled) {
+    if (s.bgType === 'solid') {
+      bg = hexToRgba(s.bgSolidColor, s.bgSolidAlpha);
+    } else if (s.bgType === 'gradient') {
+      bg = `linear-gradient(${s.bgGradDirection}, ${hexToRgba(s.bgGradStart, s.bgGradStartAlpha)}, ${hexToRgba(s.bgGradEnd, s.bgGradEndAlpha)})`;
+    } else if (s.bgType === 'gradient-radial') {
+      bg = `radial-gradient(${s.bgRadialPos}, ${hexToRgba(s.bgGradStart, s.bgGradStartAlpha)}, ${hexToRgba(s.bgGradEnd, s.bgGradEndAlpha)})`;
+    } else if (s.bgType === 'gradient-conic') {
+      bg = `conic-gradient(from 0deg at ${s.bgRadialPos}, ${hexToRgba(s.bgGradStart, s.bgGradStartAlpha)}, ${hexToRgba(s.bgGradEnd, s.bgGradEndAlpha)})`;
+    }
+  }
+
+  // Border
+  let borderImg = 'none';
+  let borderColor = 'transparent';
+  let borderStyle = 'solid';
+  if (s.borderEnabled) {
+    if (s.borderStyle === 'gradient') {
+      borderImg = `linear-gradient(${s.borderGradDirection}, ${hexToRgba(s.borderGradStart, s.borderGradStartAlpha)}, ${hexToRgba(s.borderGradEnd, s.borderGradEndAlpha)})`;
+      borderColor = 'transparent';
+    } else {
+      borderColor = hexToRgba(s.borderSolidColor, s.borderSolidAlpha);
+      borderStyle = s.borderStyle;
+    }
+  }
+
+  // Text shadow
+  let textShadow = 'none';
+  if (s.textShadowEnabled) {
+    textShadow = `${s.textShadowOffsetX}px ${s.textShadowOffsetY}px ${s.textShadowBlur}px ${hexToRgba(s.textShadowColor, s.textShadowAlpha)}`;
+  }
+
+  const radiusVal = s.borderRadius >= 9999 ? '50%' : s.borderRadius + 'px';
+
+  return `:root {
+  /* === Generated by OBS Ticker Configurator === */
+  /* Text colors */
+  --color-primary: ${textPrimary};
+  --color-glow: ${glow};
+  --color-accent: ${textBullet};
+  --color-secondary: ${textSecondary};
+
+  /* Background */
+  --bg-enabled: ${s.bgEnabled ? '1' : '0'};
+  --bg-color: ${bg};
+
+  /* Border */
+  --border-enabled: ${s.borderEnabled ? '1' : '0'};
+  --border-width: ${s.borderWidth}px;
+  --border-radius: ${radiusVal};
+  --border-style: ${borderStyle};
+  --border-color: ${borderColor};
+  --border-gradient: ${borderImg};
+
+  /* Typography */
+  --font-family: ${s.fontFamily};
+  --font-size: ${s.fontSize}px;
+  --font-weight: ${s.fontWeight};
+  --letter-spacing: ${s.letterSpacing}px;
+  --line-height: ${s.lineHeight};
+  --text-transform: ${s.textTransform};
+  --text-shadow: ${textShadow};
+
+  /* Animation */
+  --speed-factor: ${s.speedFactor};
+  --min-duration: ${s.minDuration};
+  --scroll-direction: ${s.scrollDirection};
+  --pause-on-hover: ${s.pauseOnHover ? '1' : '0'};
+}
+
+/* Base ticker styles */
+#ticker {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  background: var(--bg-color);
+  border-radius: var(--border-radius);
+  box-sizing: border-box;
+  font-family: var(--font-family);
+  line-height: var(--line-height);
+  overflow: hidden;
+}
+
+/* Border via ::before for gradient support */
+#ticker::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--border-width) * -1);
+  border-radius: calc(var(--border-radius) + var(--border-width));
+  background: var(--border-gradient);
+  border: var(--border-width) solid var(--border-color);
+  border-style: var(--border-style);
+  z-index: -1;
+  opacity: var(--border-enabled);
+  pointer-events: none;
+}
+
+.scrolling-text {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: var(--font-size);
+  font-weight: var(--font-weight);
+  letter-spacing: var(--letter-spacing);
+  text-transform: var(--text-transform);
+  color: var(--color-primary);
+  text-shadow: var(--text-shadow);
+  will-change: transform;
+  animation: scroll var(--duration, 30s) linear infinite;
+}
+
+.scrolling-text[style*="ltr"] {
+  animation-name: scroll-reverse;
+}
+
+.scrolling-text:hover {
+  animation-play-state: var(--pause-on-hover, paused);
+}
+
+.bullet-point {
+  color: var(--color-accent);
+  margin: 0 10px;
+  display: inline-block;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes scroll {
+  from { transform: translateX(100%); }
+  to { transform: translateX(-100%); }
+}
+
+@keyframes scroll-reverse {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* RTL/LTR via animation-direction */
+.scrolling-text[style*="rtl"] { animation-direction: normal; }
+.scrolling-text[style*="ltr"] { animation-direction: reverse; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .scrolling-text { animation: none; transform: translateX(0); }
+  .bullet-point { animation: none; }
+}
+`;
+
+// ===== Generate script.js =====
+function generateScriptJS() {
+  const s = state;
+  return `/*============================================================
+==              ⚙️ CUSTOMIZE SETTINGS HERE ⚙️             ==
+============================================================*/
+const CONFIG = {
+    // How fast the text scrolls. Higher number = SLOWER scroll.
+    speedFactor: ${s.speedFactor},
+
+    // The minimum scroll time in seconds, even for short text.
+    minDuration: ${s.minDuration},
+
+    // Scroll direction: 'rtl' (right-to-left) or 'ltr' (left-to-right)
+    scrollDirection: "${s.scrollDirection}",
+
+    // Pause animation on hover
+    pauseOnHover: ${s.pauseOnHover},
+
+    // Set to 'true' to use an RSS feed, 'false' to use your custom text.
+    useRssFeed: ${s.useRssFeed},
+
+    // The RSS feed URL to use if useRssFeed is true.
+    rssUrl: "${s.rssUrl}",
+
+    // Maximum RSS items to show (0 = all)
+    maxRssItems: ${s.maxRssItems},
+
+    // Your custom messages to display if useRssFeed is false.
+    customText: [
+        "Bem vindos xD",
+        "Siga para Mais",
+        "Obrigada por assistirem",
+        "Destrutivamente Arrumado"
+    ],
+
+    // How often to refresh the RSS feed, in minutes.
+    rssRefreshIntervalMinutes: ${s.rssRefreshInterval}
+};
+/*==========================================================*/
+
+// --- The rest of the script uses the settings from CONFIG ---
+
+const VERSION = '0.4.0';
+
+// Use rss2json API to bypass CORS (free, no key needed for basic usage)
+const RSS2JSON_API = "https://api.rss2json.com/v1/api.json?rss_url=";
+const PROXIED_RSS_URL = RSS2JSON_API + encodeURIComponent(CONFIG.rssUrl);
+
+function setTickerText(text) {
+    const scrollingElement = document.querySelector(".scrolling-text");
+    scrollingElement.innerHTML = text;
+    const duration = Math.max(CONFIG.minDuration, text.length * CONFIG.speedFactor);
+    scrollingElement.style.setProperty('--duration', duration + 's');
+    scrollingElement.style.setProperty('--scroll-direction', CONFIG.scrollDirection);
+    // Restart animation
+    scrollingElement.style.animation = 'none';
+    scrollingElement.offsetHeight; // trigger reflow
+    scrollingElement.style.animation = 'scroll ' + duration + 's linear infinite';
+    scrollingElement.style.animationDirection = CONFIG.scrollDirection;
+}
+
+function displayCustomText() {
+    const tickerText = CONFIG.customText.join(' <span class="bullet-point">●</span> ');
+    setTickerText(tickerText);
+}
+
+async function fetchRSS() {
+    try {
+        const response = await fetch(PROXIED_RSS_URL);
+        if (!response.ok) throw new Error(\`HTTP error! status: \${response.status}\`);
+        const data = await response.json();
+        if (data.status !== "ok" || !data.items || data.items.length === 0) {
+            throw new Error("No items found in RSS feed.");
+        }
+        let headlines = data.items.map(item => item.title);
+        if (CONFIG.maxRssItems > 0) {
+            headlines = headlines.slice(0, CONFIG.maxRssItems);
+        }
+        const tickerText = headlines.join(' <span class="bullet-point">●</span> ');
+        setTickerText(tickerText);
+    } catch (error) {
+        console.error("Error fetching RSS:", error);
+        setTickerText("Error loading news feed. Check console for details.");
+    }
+}
+
+function initializeTicker() {
+    if (CONFIG.useRssFeed) {
+        fetchRSS();
+        setInterval(fetchRSS, CONFIG.rssRefreshIntervalMinutes * 60 * 1000);
+    } else {
+        displayCustomText();
+    }
+    console.log(\`OBS Ticker \${VERSION} initialized\`);
+}
+
+initializeTicker();`;
+}
+
+// ===== Apply to Preview =====
+function applyToPreview() {
+  uiToState();
+  updateFontPreview();
+
+  const iframe = els.previewFrame;
+  const css = generateCSS();
+
+  try {
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    let styleEl = doc.getElementById('configurator-styles');
+    if (!styleEl) {
+      styleEl = doc.createElement('style');
+      styleEl.id = 'configurator-styles';
+      doc.head.appendChild(styleEl);
+    }
+    styleEl.textContent = css;
+  } catch (e) {
+    console.warn('Could not inject CSS (cross-origin?)', e);
+    // Fallback: reload iframe
+    iframe.src = 'index.html?' + Date.now();
+    return;
+  }
+
+  showToast('Preview atualizado!', 'success');
+}
+
+// ===== Save to Files (File System Access API) =====
+async function saveToFiles() {
+  uiToState();
+  const css = generateCSS();
+  const js = generateScriptJS();
+
+  // Try File System Access API first
+  if ('showDirectoryPicker' in window) {
+    try {
+      const dirHandle = await window.showDirectoryPicker({
+        mode: 'readwrite',
+        startIn: 'documents'
+      });
+      await writeFile(dirHandle, 'style.css', css);
+      await writeFile(dirHandle, 'script.js', js);
+      showToast('Arquivos salvos diretamente na pasta!', 'success');
+      return;
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.warn('File System Access failed, falling back to download:', err);
+      }
+    }
+  }
+
+  // Fallback: download
+  downloadFile('style.css', css, 'text/css');
+  downloadFile('script.js', js, 'application/javascript');
+  showToast('Arquivos baixados! (Seu navegador não suporta salvamento direto)', 'success');
+}
+
+async function writeFile(dirHandle, filename, content) {
+  const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(content);
+  await writable.close();
+}
+
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== Export/Import JSON =====
+function exportJSON() {
+  uiToState();
+  const json = JSON.stringify(state, null, 2);
+  downloadFile('ticker-config.json', json, 'application/json');
+  showToast('Config exportado!', 'success');
+}
+
+function importJSON() {
+  els.jsonImport.click();
+}
+
+els.jsonImport.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      Object.assign(state, imported);
+      // Ensure colors array exists
+      if (!state.colors) state.colors = defaultState.colors;
+      stateToUi();
+      applyToPreview();
+      showToast('Config importado!', 'success');
+    } catch (err) {
+      showToast('Erro ao importar: ' + err.message, 'error');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+// ===== Reset =====
+function resetDefaults() {
+  if (!confirm('Restaurar todos os padrões?')) return;
+  Object.assign(state, JSON.parse(JSON.stringify(defaultState)));
+  stateToUi();
+  applyToPreview();
+  showToast('Padrões restaurados!', 'success');
+}
+
+// ===== Debounced Apply =====
+let debounceTimer;
+function debouncedApply() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(applyToPreview, 200);
+}
+
+// ===== Event Listeners =====
+els.btnApply.addEventListener('click', applyToPreview);
+els.btnSave.addEventListener('click', saveToFiles);
+els.btnExport.addEventListener('click', exportJSON);
+els.btnImport.addEventListener('click', importJSON);
+els.btnReset.addEventListener('click', resetDefaults);
+
+// Auto-apply on any change
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('input', debouncedApply);
+  el.addEventListener('change', debouncedApply);
+});
+
+// Initial
+stateToUi();
+applyToPreview();
+}
+</script>
+</body>
+</html>

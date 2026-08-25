@@ -1,0 +1,39 @@
+# OBS Ticker HTTP Server - systemd User Service
+# 
+# Instalação (Linux):
+#   cp obs-ticker-server.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now obs-ticker-server.service
+#
+# Verificação:
+#   systemctl --user status obs-ticker-server.service
+#   journalctl --user -u obs-ticker-server.service -f
+#
+# Desinstalação:
+#   systemctl --user disable --now obs-ticker-server.service
+#   rm ~/.config/systemd/user/obs-ticker-server.service
+#   systemctl --user daemon-reload
+
+[Unit]
+Description=OBS Ticker HTTP Server
+Documentation=https://github.com/Derek-G1/OBS_Ticker_v2
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Caminho absoluto para o diretório do projeto
+WorkingDirectory=/run/media/system/Geral/apps/OBS/rss/OBS_Ticker_v2
+# Comando de execução (usa python3 do sistema)
+ExecStart=/usr/bin/python3 server.py --port 8082 --no-browser --host 0.0.0.0
+# Reiniciar automaticamente se falhar
+Restart=always
+RestartSec=5
+# Limitar recursos (opcional)
+MemoryMax=100M
+CPUQuota=10%
+# Ambiente
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

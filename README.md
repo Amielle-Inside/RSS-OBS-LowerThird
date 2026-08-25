@@ -1,149 +1,168 @@
-# OBS Live News & Text Ticker
+# OBS Ticker v2 - Configuração Cross-Platform
 
-A simple, modern, and highly customizable scrolling text ticker for use as a Browser Source in OBS Studio. Display your own custom messages or pull live headlines from any RSS news feed to keep your stream engaging.
+Ticker RSS animado para OBS Studio com configurador visual, funcionando em **Linux, Windows e macOS**.
 
----
+## 🚀 Início Rápido
 
-## Features ✨
+### Linux / macOS
+```bash
+# Opção 1: Script executável (recomendado)
+cd /run/media/system/Geral/apps/OBS/rss/OBS_Ticker_v2
+chmod +x iniciar_ticker.sh
+./iniciar_ticker.sh
 
-* **Two Modes:** Choose between displaying your own list of custom messages or pulling headlines from a live RSS feed.
-* **Easy Customization:** No coding knowledge needed! All colors, speeds, and text options are in clearly marked sections at the top of the files.
-* **Modern "Gamer" Aesthetic:** Clean design with a futuristic font, borders, and neon glow effects that fit well with most stream layouts.
-* **Lightweight & Simple:** No plugins or external software required. Just a single folder and OBS Studio.
-
----
-
-## Installation & Setup ⚙️
-
-Follow these steps to get the ticker running in OBS in under two minutes.
-
-#### Step 1: Download the Files
-
-First, download the project folder which contains the following three files:
-* `index.html`
-* `style.css`
-* `script.js`
-
-Make sure you keep all three files together in the same folder on your computer.
-
----
-
-#### Step 2: Add a Browser Source in OBS
-
-1.  In OBS, go to the "Sources" dock and click the **`+`** button.
-2.  Select **Browser** from the list.
-3.  Give your new source a name, like "Live Ticker," and click **OK**.
-
----
-
-#### Step 3: Configure the Browser Source
-
-A properties window will open. Configure it with the following settings:
-
-1.  Check the box for **Local file**.
-2.  Click the **Browse** button and navigate to the folder you downloaded. Select the `index.html` file.
-3.  Set the **Width** to match your canvas width (e.g., `1920`).
-4.  Set the **Height** to control the size of the ticker (a good starting point is `150`).
-5.  Click **OK**.
-
-You should now see the ticker at the bottom of your OBS scene!
-
----
-
-## Customization 🎨
-
-This ticker was designed to be easy for anyone to modify. You only need to edit two files with a basic text editor (like Notepad on Windows or TextEdit on Mac).
-
-**⭐ Important!** After you save changes to the files, you must refresh the ticker in OBS to see them. Go to the Browser Source's **Properties** and click the **"Refresh cache of current page"** button at the bottom.
-
----
-
-### Changing Colors & Appearance (`style.css`)
-
-To change the look of the ticker, open the **`style.css`** file. All the settings you need are in the "CUSTOMIZE COLORS HERE" section at the very top.
-
-```css
-:root {
-    /* Main text and border color */
-    --primary-color: #00ff9d; 
-    
-    /* Color for the glowing effect */
-    --primary-glow-color: rgba(0, 255, 157, 0.7);
-
-    /* Color for the bullet points */
-    --accent-color: #ff00dd;
-
-    /* ... and more ... */
-}
+# Opção 2: Python direto
+python3 server.py --port 8082
 ```
 
-You can change any color value. Use simple color names (like red, gold, skyblue) or hex color codes (like #FF5733).
+### Windows
+```cmd
+REM Opção 1: Clique duas vezes no arquivo
+iniciar_ticker.bat
 
-For a great online color picker, check out [htmlcolorcodes.com](https://htmlcolorcodes.com).
-
----
-
-### Changing Speed, Text, & Data Source (`script.js`)
-
-To change how the ticker behaves, open the **`script.js`** file. All settings are in the "CUSTOMIZE SETTINGS HERE" section at the top.
-
-```javascript
-const CONFIG = {
-    // How fast the text scrolls. Higher number = SLOWER scroll.
-    speedFactor: 0.2,
-
-    // Set to 'true' to use an RSS feed, 'false' for custom text.
-    useRssFeed: false, 
-
-    // The RSS feed URL to use if useRssFeed is true.
-    rssUrl: "https://gamerant.com/feed/gaming/",
-    
-    // Your custom messages to display if useRssFeed is false.
-    customText: [
-        "Welcome to my stream",
-        "Follow for more content"
-    ]
-};
+REM Opção 2: Prompt de comando
+cd C:\caminho\para\OBS_Ticker_v2
+python server.py --port 8082
 ```
 
-- **speedFactor:** Controls the scroll speed. Higher number = slower scroll. A value of 0.1 is very fast, while 0.5 is very slow.  
-- **useRssFeed:** This is the main switch. Set to true to activate the RSS feed, or false to use your custom messages.  
-- **rssUrl:** If useRssFeed is true, paste the URL of the feed you want to use here.  
-- **customText:** If useRssFeed is false, you can edit this list of messages. Just make sure each message is inside quotes `""` and followed by a comma `,`.  
+### Acessar
+- **Configurador Visual**: http://localhost:8082/configurator.html
+- **Ticker para OBS**: http://localhost:8082/
 
 ---
 
-## Troubleshooting 🛠️
+## ⚙️ Linux: Systemd User Service (Produção)
 
-**Ticker is not showing up:**  
-- Double-check that the "Local file" path in the Browser Source properties is correct.  
-- Make sure the source is visible in the Sources dock (the eye icon should be open).  
+Para rodar **automaticamente no login**, com **reinício automático** e **logs centralizados**:
 
-**RSS Feed shows an "Error loading..." message:**  
-- The RSS feed URL in `script.js` might be incorrect or the website might be down.  
-- The public CORS proxy used to fetch the feed may be temporarily unavailable. This is a free service and can sometimes be unreliable.  
+### Instalação única
+```bash
+# 1. Copiar service file
+cp /run/media/system/Geral/apps/OBS/rss/OBS_Ticker_v2/obs-ticker-server.service \
+   ~/.config/systemd/user/
+
+# 2. Recarregar e ativar
+systemctl --user daemon-reload
+systemctl --user enable --now obs-ticker-server.service
+```
+
+### Verificação
+```bash
+# Status do serviço
+systemctl --user status obs-ticker-server.service
+
+# Logs em tempo real
+journalctl --user -u obs-ticker-server.service -f
+
+# Testar se responde
+curl -s http://localhost:8082/ | head -3
+```
+
+### Desinstalação
+```bash
+systemctl --user disable --now obs-ticker-server.service
+rm ~/.config/systemd/user/obs-ticker-server.service
+systemctl --user daemon-reload
+```
 
 ---
 
-## License 📜
-This project is licensed under the MIT License.
+## 🎛️ Configurador Visual
 
-Copyright (c) 2025 Derek-G1
+Abra **http://localhost:8082/configurator.html** no navegador para personalizar:
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+| Painel | Controles |
+|--------|-----------|
+| **Paleta de Cores** | Cores dinâmicas com alpha, organizadas por papel (texto, bullets, glow, borda) |
+| **Fundo** | Sólido, Gradiente Linear/Radial/Cônico, alpha por parada |
+| **Bordas** | Largura, raio, 5 presets (quadrado→circular), estilos (sólido/tracejado/gradiente) |
+| **Tipografia** | 8 Google Fonts + custom, tamanho/peso/spacing/sombra |
+| **Comportamento** | Velocidade, duração mínima, direção (RTL/LTR), pause-on-hover, intervalo RSS |
+| **Preview** | Live preview sticky que não reinicia a animação RSS |
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+**Salvar**: Clique 💾 **Salvar** → escolha a pasta `OBS_Ticker_v2` → OBS: *Refresh cache*
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+---
+
+## 📡 Configuração OBS Studio
+
+1. **Adicionar Fonte** → **Browser Source**
+2. **Desmarcar** "Local file"
+3. **URL**: `http://localhost:8082/`
+4. **Largura**: 1920 (ou largura do canvas)
+5. **Altura**: 150-220 (ajuste conforme necessário)
+6. **FPS**: 60
+7. Após mudanças no configurador: **Botão direito na fonte** → **Propriedades** → **Refresh cache of current page**
+
+---
+
+## 🔧 RSS Feed
+
+**Atual**: `https://www.newsinside.org/feed/` (configurado no `script.js`)
+
+Para alterar:
+1. Abra o **Configurador Visual** → painel *Comportamento* → *URL do RSS*
+2. Ou edite `script.js` diretamente:
+   ```javascript
+   const CONFIG = {
+       rssUrl: "https://SEU_FEED_AQUI/feed/",
+       // ...
+   };
+   ```
+
+> **Nota**: Usa **rss2json.com** como proxy CORS (grátis, sem chave). Funciona com qualquer feed RSS público.
+
+---
+
+## 📁 Estrutura de Arquivos
+
+```
+OBS_Ticker_v2/
+├── index.html              # Ticker principal (OBS aponta aqui)
+├── configurator.html       # Configurador visual (abra no navegador)
+├── script.js               # Lógica do ticker + CONFIG
+├── style.css               # Estilos (gerado pelo configurador)
+├── server.py               # Servidor HTTP Python (cross-platform)
+├── iniciar_ticker.sh       # Launcher Linux/macOS
+├── iniciar_ticker.bat      # Launcher Windows
+├── iniciar_ticker.command  # Launcher macOS (clique duplo)
+├── obs-ticker-server.service  # systemd user service (Linux)
+└── README.md               # Este arquivo
+```
+
+---
+
+## 🐛 Solução de Problemas
+
+| Sintoma | Causa | Solução |
+|---------|-------|---------|
+| "Error loading news feed" | RSS falhou | Verifique `systemctl --user status obs-ticker-server` (Linux) ou console do navegador |
+| Porta 8080 em uso | Steam/outro app | Use porta 8082 (padrão) ou outra |
+| Feed não atualiza | Cache OBS | *Refresh cache of current page* nas propriedades da fonte |
+| Erro CORS | Usando `file://` | **Sempre use HTTP**: `http://localhost:8082/` |
+| Cores invertidas | Dark Reader | Configurador tem 5 camadas de proteção; desative extensão se persistir |
+| Fonte não carrega | Google Fonts bloqueado | Verifique conexão; configurador tem fallback |
+
+---
+
+## 📦 Requisitos
+
+| Plataforma | Requisitos |
+|------------|------------|
+| **Linux** | Python 3.6+, systemd (para service) |
+| **Windows** | Python 3.6+ (marcar "Add to PATH") |
+| **macOS** | Python 3.6+ (`brew install python3`) |
+
+---
+
+## 🔗 Referências
+
+- **Repositório original**: https://github.com/Derek-G1/OBS_Ticker_v2
+- **rss2json API**: https://rss2json.com/
+- **OBS Browser Source docs**: https://obsproject.com/wiki/Browser-Source
+
+---
+
+## 📝 Licença
+
+MIT - Baseado em [OBS_Ticker_v2](https://github.com/Derek-G1/OBS_Ticker_v2) por Derek-G1.

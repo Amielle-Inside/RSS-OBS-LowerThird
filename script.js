@@ -11,17 +11,17 @@ const CONFIG = {
     minDuration: 30,
 
     // Set to 'true' to use an RSS feed, 'false' to use your custom text.
-    useRssFeed: false, 
+    useRssFeed: true, 
 
     // The RSS feed URL to use if useRssFeed is true.
-    rssUrl: "https://gamerant.com/feed/gaming/",
+    rssUrl: "https://www.newsinside.org/feed/",
     
     // Your custom messages to display if useRssFeed is false.
     customText: [
-        "Welcome to my stream",
-        "Follow for more content",
-        "Thanks for watching",
-        "Don't forget to subscribe"
+        "Bem vindos xD",
+        "Siga para Mais",
+        "Obrigada por assistirem",
+        "Destrutivamente Arrumado"
     ],
 
     // How often to refresh the RSS feed, in minutes.
@@ -34,10 +34,9 @@ const CONFIG = {
 
 const VERSION = '0.4.0'; // Finalized version
 
-// IMPORTANT: The public CORS proxy is a free demo and can be unreliable.
-// For serious use, consider hosting your own or finding a different proxy service.
-const CORS_PROXY = "https://cors-anywhere.herokuapp.com/";
-const PROXIED_RSS_URL = CORS_PROXY + CONFIG.rssUrl;
+// Use rss2json API to bypass CORS (free, no key needed for basic usage)
+const RSS2JSON_API = "https://api.rss2json.com/v1/api.json?rss_url=";
+const PROXIED_RSS_URL = RSS2JSON_API + encodeURIComponent(CONFIG.rssUrl);
 
 function setTickerText(text) {
     const scrollingElement = document.querySelector(".scrolling-text");
@@ -55,12 +54,11 @@ async function fetchRSS() {
     try {
         const response = await fetch(PROXIED_RSS_URL);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const text = await response.text();
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, "text/xml");
-        const items = xml.querySelectorAll("item");
-        const headlines = Array.from(items).map(item => item.querySelector("title").textContent);
-        if (headlines.length === 0) throw new Error("No headlines found in RSS feed.");
+        const data = await response.json();
+        if (data.status !== "ok" || !data.items || data.items.length === 0) {
+            throw new Error("No items found in RSS feed.");
+        }
+        const headlines = data.items.map(item => item.title);
         const tickerText = headlines.join(' <span class="bullet-point">●</span> ');
         setTickerText(tickerText);
     } catch (error) {
