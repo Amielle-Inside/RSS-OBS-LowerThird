@@ -16,14 +16,14 @@
 
 [Unit]
 Description=OBS Ticker HTTP Server
-Documentation=https://github.com/Derek-G1/OBS_Ticker_v2
+Documentation=https://github.com/Amielle-Inside/RSS-OBS-LowerThird
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-# Caminho absoluto para o diretório do projeto
-WorkingDirectory=/run/media/system/Geral/apps/OBS/rss/OBS_Ticker_v2
+# Caminho relativo ao diretório home do usuário (%h expande para $HOME)
+WorkingDirectory=%h/OBS/rss/OBS_Ticker_v2
 # Comando de execução (usa python3 do sistema)
 ExecStart=/usr/bin/python3 server.py --port 8082 --no-browser --host 0.0.0.0
 # Reiniciar automaticamente se falhar

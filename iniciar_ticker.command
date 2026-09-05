@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # OBS Ticker - Inicializador macOS (clique duplo no Finder)
 # Para permitir execução: chmod +x iniciar_ticker.command
+# Uso: ./iniciar_ticker.command [PORT]
 
 set -euo pipefail
 
@@ -10,12 +11,14 @@ cd "$SCRIPT_DIR"
 PORT="${1:-8082}"
 
 echo "╔══════════════════════════════════════════════════════════╗"
-echo "║           🎬 OBS Ticker Server v1.0 (macOS)              ║"
+echo "║           🎬 OBS Ticker Server v1.1 (macOS)              ║"
 echo "╠══════════════════════════════════════════════════════════╣"
 echo "║  Diretório: $SCRIPT_DIR"
 echo "║  Porta:     $PORT"
 echo "║  Config:    http://localhost:$PORT/configurator.html"
 echo "║  Ticker:    http://localhost:$PORT/"
+echo "║  Health:    http://localhost:$PORT/healthz"
+echo "║  RSS Proxy: http://localhost:$PORT/api/rss?url=<URL>"
 echo "╚══════════════════════════════════════════════════════════╝"
 echo
 

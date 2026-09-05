@@ -459,6 +459,11 @@ input[type="color"] { width: 44px; height: 44px; border: none; border-radius: 8p
           <label for="useRssFeed">Usar feed RSS (desmarque para texto customizado)</label>
         </div>
       </div>
+      <div class="field" id="customTextRow" style="display:none;">
+        <label>Texto customizado (uma linha por item)</label>
+        <textarea id="customText" rows="6" placeholder="Linha 1&#10;Linha 2&#10;Linha 3" style="width:100%;padding:10px;background:var(--ui-input);border:1px solid var(--ui-border);border-radius:8px;color:var(--ui-text);font-family:monospace;font-size:0.85rem;resize:vertical;box-sizing:border-box;"></textarea>
+        <small style="color:var(--ui-muted);font-size:0.75rem;">Cada linha será um item separado no ticker, unidos por bullets ●</small>
+      </div>
     </div>
 
     <!-- Actions -->
@@ -550,7 +555,13 @@ const defaultState = {
   rssRefreshInterval: 5,
   maxRssItems: 0,
   rssUrl: 'https://www.newsinside.org/feed/',
-  useRssFeed: true
+  useRssFeed: true,
+  customText: [
+    "Bem vindos xD",
+    "Siga para Mais",
+    "Obrigada por assistirem",
+    "Destrutivamente Arrumado"
+  ]
 };
 
 const state = JSON.parse(JSON.stringify(defaultState));
@@ -765,35 +776,52 @@ els.fontFamily.addEventListener('change', () => {
 });
 // Text shadow
 toggleRows('textShadowEnabled', { textShadowColorRow:false, textShadowBlurRow:false, textShadowOffsetRow:false }, false);
+// Custom text toggle
+els.useRssFeed.addEventListener('change', () => {
+  els.customTextRow.style.display = els.useRssFeed.checked ? 'none' : '';
+});
+els.useRssFeed.dispatchEvent(new Event('change'));
 
 // ===== State <-> UI =====
 function uiToState() {
   // Simple fields
   Object.keys(state).forEach(key => {
     if (key === 'colors') return;
+    if (key === 'customText') return; // handled separately
     const el = els[key];
     if (!el) return;
     if (el.type === 'checkbox') state[key] = el.checked;
     else if (el.type === 'number' || el.type === 'range') state[key] = parseFloat(el.value);
     else if (el.type === 'color') state[key] = el.value;
+    else if (el.tagName === 'TEXTAREA') state[key] = el.value.split('\n').map(s => s.trim()).filter(s => s);
     else state[key] = el.value;
   });
   // Font family custom
   if (els.fontFamily.value === 'custom') state.fontFamily = els.customFontName.value || "'Orbitron', sans-serif";
+  // Custom text
+  if (els.customText) {
+    state.customText = els.customText.value.split('\n').map(s => s.trim()).filter(s => s);
+  }
 }
 
 function stateToUi() {
   Object.keys(state).forEach(key => {
     if (key === 'colors') return;
+    if (key === 'customText') return; // handled separately
     const el = els[key];
     if (!el) return;
     if (el.type === 'checkbox') el.checked = state[key];
     else if (el.type === 'number' || el.type === 'range') el.value = state[key];
     else if (el.type === 'color') el.value = state[key];
+    else if (el.tagName === 'TEXTAREA') el.value = state[key].join('\n');
     else el.value = state[key];
   });
   // Font
   els.customFontRow.style.display = (els.fontFamily.value === 'custom') ? '' : 'none';
+  // Custom text
+  if (els.customText) {
+    els.customText.value = state.customText.join('\n');
+  }
   // Toggles
   const bgType = state.bgType;
   els.bgSolidRow.style.display = bgType === 'solid' ? '' : 'none';
@@ -836,12 +864,16 @@ function generateCSS() {
   const textBullet = hexToRgba(s.textBulletColor, s.textBulletAlpha);
   const textSecondary = hexToRgba(s.textSecondaryColor, s.textSecondaryAlpha);
 
-  // Get named colors from palette (only glow remains)
+  // Get named colors from palette
   const getColor = (id, fallback) => {
     const c = s.colors.find(x => x.id === id);
     return c ? hexToRgba(c.color, c.alpha) : fallback;
   };
   const glow = getColor('glow', 'rgba(0,255,157,0.7)');
+  const borderStart = getColor('border1', 'rgba(0,255,157,1)');
+  const borderEnd = getColor('border2', 'rgba(255,0,221,1)');
+  const bgStart = getColor('bg1', 'rgba(10,10,26,1)');
+  const bgEnd = getColor('bg2', 'rgba(26,26,62,1)');
 
   // Background
   let bg = 'transparent';
@@ -886,6 +918,12 @@ function generateCSS() {
   --color-glow: ${glow};
   --color-accent: ${textBullet};
   --color-secondary: ${textSecondary};
+
+  /* Palette colors (referenced from dynamic color list) */
+  --color-border-start: ${borderStart};
+  --color-border-end: ${borderEnd};
+  --color-bg-start: ${bgStart};
+  --color-bg-end: ${bgEnd};
 
   /* Background */
   --bg-enabled: ${s.bgEnabled ? '1' : '0'};
@@ -1028,12 +1066,12 @@ const CONFIG = {
     maxRssItems: ${s.maxRssItems},
 
     // Your custom messages to display if useRssFeed is false.
-    customText: [
+    customText: ${JSON.stringify(s.customText || [
         "Bem vindos xD",
         "Siga para Mais",
         "Obrigada por assistirem",
         "Destrutivamente Arrumado"
-    ],
+    ])},
 
     // How often to refresh the RSS feed, in minutes.
     rssRefreshIntervalMinutes: ${s.rssRefreshInterval}
@@ -1044,9 +1082,14 @@ const CONFIG = {
 
 const VERSION = '0.4.0';
 
-// Use rss2json API to bypass CORS (free, no key needed for basic usage)
+// RSS Proxy - try local first, fallback to rss2json.com
+const LOCAL_RSS_PROXY = "/api/rss?url=";
 const RSS2JSON_API = "https://api.rss2json.com/v1/api.json?rss_url=";
-const PROXIED_RSS_URL = RSS2JSON_API + encodeURIComponent(CONFIG.rssUrl);
+// Use local proxy if on same origin, else fallback to rss2json
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '0.0.0.0';
+const PROXIED_RSS_URL = isLocalhost 
+    ? LOCAL_RSS_PROXY + encodeURIComponent(CONFIG.rssUrl)
+    : RSS2JSON_API + encodeURIComponent(CONFIG.rssUrl);
 
 function setTickerText(text) {
     const scrollingElement = document.querySelector(".scrolling-text");
@@ -1069,12 +1112,36 @@ function displayCustomText() {
 async function fetchRSS() {
     try {
         const response = await fetch(PROXIED_RSS_URL);
-        if (!response.ok) throw new Error(\`HTTP error! status: \${response.status}\`);
-        const data = await response.json();
-        if (data.status !== "ok" || !data.items || data.items.length === 0) {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        let headlines = [];
+        
+        // Check if using local proxy (XML) or rss2json (JSON)
+        const isLocalProxy = PROXIED_RSS_URL.startsWith('/api/rss');
+        
+        if (isLocalProxy) {
+            // Parse XML response
+            const text = await response.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(text, "application/xml");
+            const items = xmlDoc.querySelectorAll('item');
+            headlines = Array.from(items).map(item => {
+                const title = item.querySelector('title');
+                return title ? title.textContent : '';
+            }).filter(Boolean);
+        } else {
+            // Parse JSON response from rss2json
+            const data = await response.json();
+            if (data.status !== "ok" || !data.items || data.items.length === 0) {
+                throw new Error("No items found in RSS feed.");
+            }
+            headlines = data.items.map(item => item.title);
+        }
+        
+        if (headlines.length === 0) {
             throw new Error("No items found in RSS feed.");
         }
-        let headlines = data.items.map(item => item.title);
+        
         if (CONFIG.maxRssItems > 0) {
             headlines = headlines.slice(0, CONFIG.maxRssItems);
         }

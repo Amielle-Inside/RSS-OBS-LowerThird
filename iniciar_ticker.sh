@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # OBS Ticker - Inicializador Linux/macOS
-# Uso: ./iniciar_ticker.sh ou clique duas vezes (Linux com execução permitida)
+# Uso: ./iniciar_ticker.sh [PORT] [--no-browser]
 
 set -euo pipefail
 
@@ -11,12 +11,14 @@ PORT="${1:-8082}"
 NO_BROWSER="${2:-false}"
 
 echo "╔══════════════════════════════════════════════════════════╗"
-echo "║           🎬 OBS Ticker Server v1.0 (Linux/macOS)        ║"
+echo "║           🎬 OBS Ticker Server v1.1 (Linux/macOS)        ║"
 echo "╠══════════════════════════════════════════════════════════╣"
 echo "║  Diretório: $SCRIPT_DIR"
 echo "║  Porta:     $PORT"
 echo "║  Config:    http://localhost:$PORT/configurator.html"
 echo "║  Ticker:    http://localhost:$PORT/"
+echo "║  Health:    http://localhost:$PORT/healthz"
+echo "║  RSS Proxy: http://localhost:$PORT/api/rss?url=<URL>"
 echo "╚══════════════════════════════════════════════════════════╝"
 echo
 
