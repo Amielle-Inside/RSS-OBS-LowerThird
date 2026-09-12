@@ -20,6 +20,147 @@ Baseado no projeto original **OBS_Ticker_v2** de **Derek-G1** (https://github.co
 
 ---
 
+## Como funciona
+
+O projeto é composto por três partes principais:
+
+1. **`index.html`** — Página principal do ticker que o OBS carrega como **Browser Source**. Contém a estrutura HTML e carrega o `style.css` e `script.js` gerados.
+2. **`configurator.html`** — Interface visual para personalizar o ticker em tempo real. Abra no navegador em `http://localhost:8082/configurator.html`.
+3. **`server.py`** — Servidor HTTP Python simples que serve os arquivos e fornece API de proxy RSS (`/api/rss`) para contornar CORS.
+
+### Fluxo de dados
+
+```
+configurator.html → (salva) → style.css + script.js → index.html → OBS Browser Source
+                                          ↓
+                                    server.py (porta 8082)
+                                          ↓
+                              /api/rss?url=... (proxy CORS via rss2json)
+```
+
+### O que o configurador gera
+
+- **`style.css`** — Variáveis CSS customizadas (cores, tamanhos, fonte) + `@import` do Google Fonts
+- **`script.js`** — Configuração `CONFIG` (velocidade, RSS URL, texto customizado, intervalo de atualização)
+
+---
+
+## Personalizando as Fontes
+
+### Fontes pré-definidas (Google Fonts)
+
+O configurador já inclui 8 fontes do Google Fonts prontas para uso:
+
+| Fonte | Estilo | Ideal para |
+|-------|--------|------------|
+| **Orbitron** | Futurista, tecnológica | Streams de jogos, tech |
+| **Rajdhani** | Geométrica, quadrada | Sci-fi, UI moderna |
+| **Exo 2** | Tecnológica, versátil | Geral, gaming |
+| **Share Tech Mono** | Monoespaçada, técnica | Código, terminal, dados |
+| **JetBrains Mono** | Monoespaçada, ligaduras | Programação, dev streams |
+| **Fira Code** | Monoespaçada, ligaduras | Código, terminal |
+| **Segoe UI** | Sistema (Windows) | UI nativa Windows |
+| **Roboto** | Sistema (Android/Chrome) | UI Material, limpa |
+| **Inter** | Sistema (moderna) | UI moderna, legível |
+
+> **Importante**: As fontes do Google Fonts são carregadas via `@import` no CSS gerado. O navegador baixa automaticamente quando o ticker carrega. **Requer conexão com internet** na primeira carga.
+
+### Usando uma fonte Google Fonts personalizada
+
+1. No configurador, vá em **Tipografia** → **Fonte** → selecione **✏️ Personalizada...**
+2. No campo **"Nome da fonte customizada"**, digite o nome **exato** da fonte do Google Fonts + fallback, ex:
+   ```
+   'Space Mono', monospace
+   'Poppins', sans-serif
+   'Montserrat', sans-serif
+   'IBM Plex Sans', sans-serif
+   ```
+3. O configurador **não adiciona automaticamente o `@import`** para fontes customizadas. Você tem duas opções:
+
+   **Opção A — Edite o `style.css` gerado manualmente:**
+   Adicione no topo do arquivo:
+   ```css
+   @import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
+   ```
+
+   **Opção B — Use a URL completa no nome da fonte (funciona direto):**
+   No campo personalizado, use:
+   ```
+   'Space Mono', monospace
+   ```
+   E adicione o `@import` no `style.css` depois de salvar.
+
+### Encontrando o nome correto da fonte no Google Fonts
+
+1. Acesse https://fonts.google.com/
+2. Busque a fonte desejada
+3. Clique em **"Select"** → **"@import"** na barra lateral
+4. Copie o `family=` da URL, ex: `family=Space+Mono:wght@400;700`
+5. O nome CSS é o que vem antes de `:` ou `+` — no caso: `Space Mono`
+
+### Usando fontes locais (instaladas no sistema)
+
+Digite o nome da fonte exatamente como aparece no sistema + fallback:
+```
+'Minha Fonte Instalada', sans-serif
+```
+
+> **Dica**: No Linux, use `fc-list | grep -i "nome"` para achar o nome exato. No Windows/macOS, verifique no gerenciador de fontes.
+
+### Pesos (weights) e estilos
+
+O `@import` padrão do configurador carrega apenas `wght@700` (bold) para Orbitron. Para outras fontes/pesos, edite o `@import` no `style.css` gerado:
+
+```css
+/* Exemplo: Roboto com pesos 400, 500, 700 */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+
+/* Exemplo: Montserrat com vários pesos */
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap");
+```
+
+---
+
+## Como usar as Google Fonts (guia rápido)
+
+### Passo a passo no configurador
+
+1. Abra `http://localhost:8082/configurator.html`
+2. Painel **🔤 Tipografia** → **Fonte**
+3. Escolha uma das 9 opções pré-definidas ou **✏️ Personalizada...**
+4. Se personalizada: digite `'Nome da Fonte', fallback` (ex: `'Poppins', sans-serif`)
+5. Clique **🔄 Aplicar no Preview** para testar
+6. Clique **💾 Salvar** → selecione a pasta do projeto
+7. No OBS: clique com botão direito na Browser Source → **Refresh cache of current page**
+
+### Exemplos práticos
+
+| Objetivo | Configuração no campo personalizado | `@import` necessário no style.css |
+|----------|--------------------------------------|-----------------------------------|
+| Poppins (moderna, limpa) | `'Poppins', sans-serif` | `@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");` |
+| Space Mono (mono, retro) | `'Space Mono', monospace` | `@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");` |
+| Montserrat (versátil) | `'Montserrat', sans-serif` | `@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap");` |
+| JetBrains Mono (já incluída) | `'JetBrains Mono', monospace` | **Não** (já no configurador) |
+
+### Fallback de fontes
+
+Sempre inclua um fallback genérico:
+- `sans-serif` — para fontes proporcionais (Roboto, Inter, Poppins)
+- `monospace` — para fontes monoespaçadas (JetBrains Mono, Fira Code, Space Mono)
+- `serif` — para fontes com serifa (Merriweather, Playfair Display)
+
+Exemplo: `'Merriweather', serif`
+
+### display=swap (carregamento rápido)
+
+O parâmetro `&display=swap` no `@import` faz o texto aparecer com a fonte do sistema imediatamente e trocar pela Google Font quando carregar — evita "flash of invisible text" (FOIT).
+
+```css
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap");
+```
+
+---
+
 ## Instalação por plataforma
 
 ### Linux
@@ -239,7 +380,7 @@ RSS-OBS-LowerThird/
 
 - **Projeto original**: [OBS_Ticker_v2](https://github.com/Derek-G1/OBS_Ticker_v2) por **Derek-G1** (MIT License)
 - **Proxy RSS**: [rss2json.com](https://rss2json.com/) - API gratuita para contornar CORS
-- **Fontes**: Google Fonts (Orbitron, Rajdhani, Exo 2, Share Tech Mono, JetBrains Mono, Fira Code)
+- **Fontes**: Google Fonts (Orbitron, Rajdhani, Exo 2, Share Tech Mono, JetBrains Mono, Fira Code, Roboto, Inter)
 
 ---
 
