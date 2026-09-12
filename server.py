@@ -49,24 +49,79 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.handle_rss_proxy()
             return
         
+        # Save config endpoint
+        if self.path == '/api/save-config':
+            self.send_error(405, "Use POST to save config")
+            return
+        
         super().do_GET()
+
+    def do_POST(self):
+        # Save config endpoint
+        if self.path == '/api/save-config':
+            self.handle_save_config()
+            return
+        
+        self.send_error(404, "Not Found")
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
+    def handle_save_config(self):
+        """Save style.css and script.js from configurator"""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length == 0:
+                self.send_error(400, "Empty request body")
+                return
+            
+            raw_data = self.rfile.read(content_length)
+            data = json.loads(raw_data.decode('utf-8'))
+            
+            css_content = data.get('css', '')
+            js_content = data.get('js', '')
+            
+            if not css_content or not js_content:
+                self.send_error(400, "Missing css or js content")
+                return
+            
+            # Write files to the server directory
+            base_dir = Path(__file__).parent
+            css_path = base_dir / 'style.css'
+            js_path = base_dir / 'script.js'
+            
+            css_path.write_text(css_content, encoding='utf-8')
+            js_path.write_text(js_content, encoding='utf-8')
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "ok", "message": "Files saved successfully"}).encode())
+            
+        except json.JSONDecodeError:
+            self.send_error(400, "Invalid JSON")
+        except Exception as e:
+            self.send_error(500, f"Save error: {str(e)}")
     
     def handle_rss_proxy(self):
         """Proxy RSS feed to bypass CORS"""
         try:
             # Parse query params
             parsed = urlparse(self.path)
-            query = {}
-            if parsed.query:
-                for pair in parsed.query.split('&'):
-                    if '=' in pair:
-                        k, v = pair.split('=', 1)
-                        query[k] = v
+            from urllib.parse import parse_qs, unquote
+            query = parse_qs(parsed.query)
             
-            rss_url = query.get('url')
+            rss_url = query.get('url', [None])[0]
             if not rss_url:
                 self.send_error(400, "Missing 'url' parameter")
                 return
+            
+            # URL-decode the rss_url (it comes encoded in query string)
+            rss_url = unquote(rss_url)
             
             # Validate URL
             parsed_url = urlparse(rss_url)
